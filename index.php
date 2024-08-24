@@ -62,7 +62,7 @@ $result = $conn->query($sql);
     </style>
 </head>
 <body>
-    <h1>Task Manager</h1>
+    <h1>Task Manager V0.1</h1>
     
     <form method="post" action="">
         <input type="text" name="task" placeholder="Enter your task" required>
