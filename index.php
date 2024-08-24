@@ -59,12 +59,23 @@ if (isset($_GET['delete'])) {
     $stmt->close();
 }
 
-// Fetch tasks
-$sql = "SELECT tasks.id, tasks.description, tasks.date_added, tags.name AS tag_name 
+// Fetch tasks with optional tag filter
+$filter_tag = isset($_GET['filter_tag']) ? $_GET['filter_tag'] : '';
+$sql = "SELECT tasks.id, tasks.description, tasks.date_added, tags.name AS tag_name, tags.id AS tag_id 
         FROM tasks 
-        LEFT JOIN tags ON tasks.tag_id = tags.id 
-        ORDER BY tasks.date_added DESC";
-$result = $conn->query($sql);
+        LEFT JOIN tags ON tasks.tag_id = tags.id";
+if (!empty($filter_tag)) {
+    $sql .= " WHERE tasks.tag_id = ?";
+}
+$sql .= " ORDER BY tasks.date_added DESC";
+
+$stmt = $conn->prepare($sql);
+if (!empty($filter_tag)) {
+    $stmt->bind_param("i", $filter_tag);
+}
+$stmt->execute();
+$result = $stmt->get_result();
+$stmt->close();
 
 // Fetch tags for dropdown
 $sql = "SELECT * FROM tags ORDER BY name";
@@ -111,25 +122,46 @@ $tags_result = $conn->query($sql);
             color: red;
             text-decoration: none;
         }
+        .filter-form {
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
-    <h1>Task Manager V0.2</h1>
+    <h1>Task Manager V0.3</h1>
     
     <form method="post" action="">
         <input type="text" name="task" placeholder="Enter your task" required>
         <select name="tag" id="tag-select">
             <option value="">Select a tag</option>
-            <?php while($tag = $tags_result->fetch_assoc()): ?>
+            <?php 
+            $tags_result->data_seek(0);
+            while($tag = $tags_result->fetch_assoc()): 
+            ?>
                 <option value="<?php echo $tag['id']; ?>"><?php echo htmlspecialchars($tag['name']); ?></option>
             <?php endwhile; ?>
             <option value="new">Add new tag</option>
         </select>
         <input type="text" name="new_tag" id="new-tag-input" placeholder="Enter new tag" style="display: none;">
-        <input type="submit" value="Submit">
+        <input type="submit" value="Add Task">
     </form>
     
     <h2>Task List</h2>
+    <form method="get" action="" class="filter-form">
+        <select name="filter_tag">
+            <option value="">All Tags</option>
+            <?php 
+            $tags_result->data_seek(0);
+            while($tag = $tags_result->fetch_assoc()): 
+            ?>
+                <option value="<?php echo $tag['id']; ?>" <?php echo ($filter_tag == $tag['id']) ? 'selected' : ''; ?>>
+                    <?php echo htmlspecialchars($tag['name']); ?>
+                </option>
+            <?php endwhile; ?>
+        </select>
+        <input type="submit" value="Filter">
+    </form>
+    
     <table>
         <tr>
             <th>Serial Number</th>
@@ -147,7 +179,7 @@ $tags_result = $conn->query($sql);
                 echo "<td>" . htmlspecialchars($row["description"]) . "</td>";
                 echo "<td>" . $row["date_added"] . "</td>";
                 echo "<td>" . htmlspecialchars($row["tag_name"]) . "</td>";
-                echo "<td><a href='?delete=" . $row["id"] . "' class='delete'>Delete</a></td>";
+                echo "<td><a href='?delete=" . $row["id"] . "&filter_tag=" . $filter_tag . "' class='delete'>Delete</a></td>";
                 echo "</tr>";
                 $serial_number++;
             }
