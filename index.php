@@ -1,10 +1,5 @@
 <?php
-// Database connection
-$servername = "localhost";
-$username = "taskmaster";
-$password = "master@123!!";
-$dbname = "Projects";
-
+include '../../db/connection.php';
 $conn = new mysqli($servername, $username, $password, $dbname);
 
 if ($conn->connect_error) {
