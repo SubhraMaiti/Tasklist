@@ -6,22 +6,69 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
+// Create tags table if not exists
+$sql = "CREATE TABLE IF NOT EXISTS tags (
+    id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(30) NOT NULL UNIQUE
+)";
+$conn->query($sql);
+
+// Alter tasks table to add tag_id column if not exists
+$sql = "SHOW COLUMNS FROM tasks LIKE 'tag_id'";
+$result = $conn->query($sql);
+if ($result->num_rows == 0) {
+    $sql = "ALTER TABLE tasks ADD COLUMN tag_id INT(6) UNSIGNED, ADD FOREIGN KEY (tag_id) REFERENCES tags(id)";
+    $conn->query($sql);
+}
 
 // Handle form submission
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $task = $_POST["task"];
     $date = date("Y-m-d");
+    $tag = $_POST["tag"];
     
-    $sql = "INSERT INTO tasks (description, date_added) VALUES (?, ?)";
+    // Handle new tag
+    if ($tag == "new" && !empty($_POST["new_tag"])) {
+        $new_tag = $_POST["new_tag"];
+        $sql = "INSERT IGNORE INTO tags (name) VALUES (?)";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("s", $new_tag);
+        $stmt->execute();
+        $tag_id = $stmt->insert_id;
+        $stmt->close();
+    } elseif ($tag != "new") {
+        $tag_id = $tag;
+    } else {
+        $tag_id = null;
+    }
+    
+    $sql = "INSERT INTO tasks (description, date_added, tag_id) VALUES (?, ?, ?)";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("ss", $task, $date);
+    $stmt->bind_param("ssi", $task, $date, $tag_id);
+    $stmt->execute();
+    $stmt->close();
+}
+
+// Handle task deletion
+if (isset($_GET['delete'])) {
+    $id = $_GET['delete'];
+    $sql = "DELETE FROM tasks WHERE id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $id);
     $stmt->execute();
     $stmt->close();
 }
 
 // Fetch tasks
-$sql = "SELECT * FROM tasks ORDER BY date_added DESC";
+$sql = "SELECT tasks.id, tasks.description, tasks.date_added, tags.name AS tag_name 
+        FROM tasks 
+        LEFT JOIN tags ON tasks.tag_id = tags.id 
+        ORDER BY tasks.date_added DESC";
 $result = $conn->query($sql);
+
+// Fetch tags for dropdown
+$sql = "SELECT * FROM tags ORDER BY name";
+$tags_result = $conn->query($sql);
 ?>
 
 <!DOCTYPE html>
@@ -40,9 +87,10 @@ $result = $conn->query($sql);
         form {
             margin-bottom: 20px;
         }
-        input[type="text"] {
-            width: 70%;
+        input[type="text"], select {
+            width: 30%;
             padding: 10px;
+            margin-right: 10px;
         }
         input[type="submit"] {
             padding: 10px 20px;
@@ -59,13 +107,25 @@ $result = $conn->query($sql);
         th {
             background-color: #f2f2f2;
         }
+        .delete {
+            color: red;
+            text-decoration: none;
+        }
     </style>
 </head>
 <body>
-    <h1>Task Manager V0.1</h1>
+    <h1>Task Manager V0.2</h1>
     
     <form method="post" action="">
         <input type="text" name="task" placeholder="Enter your task" required>
+        <select name="tag" id="tag-select">
+            <option value="">Select a tag</option>
+            <?php while($tag = $tags_result->fetch_assoc()): ?>
+                <option value="<?php echo $tag['id']; ?>"><?php echo htmlspecialchars($tag['name']); ?></option>
+            <?php endwhile; ?>
+            <option value="new">Add new tag</option>
+        </select>
+        <input type="text" name="new_tag" id="new-tag-input" placeholder="Enter new tag" style="display: none;">
         <input type="submit" value="Submit">
     </form>
     
@@ -75,6 +135,8 @@ $result = $conn->query($sql);
             <th>Serial Number</th>
             <th>Task Description</th>
             <th>Date Added</th>
+            <th>Tag</th>
+            <th>Action</th>
         </tr>
         <?php
         if ($result->num_rows > 0) {
@@ -84,14 +146,29 @@ $result = $conn->query($sql);
                 echo "<td>" . $serial_number . "</td>";
                 echo "<td>" . htmlspecialchars($row["description"]) . "</td>";
                 echo "<td>" . $row["date_added"] . "</td>";
+                echo "<td>" . htmlspecialchars($row["tag_name"]) . "</td>";
+                echo "<td><a href='?delete=" . $row["id"] . "' class='delete'>Delete</a></td>";
                 echo "</tr>";
                 $serial_number++;
             }
         } else {
-            echo "<tr><td colspan='3'>No tasks found</td></tr>";
+            echo "<tr><td colspan='5'>No tasks found</td></tr>";
         }
         ?>
     </table>
+
+    <script>
+        document.getElementById('tag-select').addEventListener('change', function() {
+            var newTagInput = document.getElementById('new-tag-input');
+            if (this.value === 'new') {
+                newTagInput.style.display = 'inline-block';
+                newTagInput.required = true;
+            } else {
+                newTagInput.style.display = 'none';
+                newTagInput.required = false;
+            }
+        });
+    </script>
 </body>
 </html>
 
