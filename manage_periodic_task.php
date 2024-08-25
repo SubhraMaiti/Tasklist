@@ -21,8 +21,8 @@ if ($result->num_rows == 0) {
     $conn->query($sql);
 }
 
-// Handle form submission
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
+// Handle form submission for adding new task
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['action'] == 'add') {
     $description = $_POST["description"];
     $tag = $_POST["tag"];
     $frequency = $_POST["frequency"];
@@ -52,6 +52,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $stmt->close();
 }
 
+// Handle deletion of periodic task
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['action'] == 'delete') {
+    $task_id = $_POST['task_id'];
+    $sql = "DELETE FROM periodic_tasks WHERE id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $task_id);
+    $stmt->execute();
+    $stmt->close();
+}
+
 // Fetch periodic tasks
 $sql = "SELECT periodic_tasks.*, tags.name AS tag_name 
         FROM periodic_tasks 
@@ -76,6 +86,7 @@ $tags_result = $conn->query($sql);
     <h1>Manage Periodic Tasks</h1>
     
     <form method="post" action="">
+        <input type="hidden" name="action" value="add">
         <input type="text" name="description" placeholder="Enter task description" required>
         <select name="tag" id="tag-select">
             <option value="">Select a tag</option>
@@ -121,6 +132,7 @@ $tags_result = $conn->query($sql);
             <th>Day of Week</th>
             <th>Day of Month</th>
             <th>Last Added</th>
+            <th>Action</th>
         </tr>
         <?php
         if ($result->num_rows > 0) {
@@ -134,10 +146,17 @@ $tags_result = $conn->query($sql);
                 echo "<td>" . ($row["day_of_week"] ? date('l', strtotime("Sunday +{$row['day_of_week']} days")) : "N/A") . "</td>";
                 echo "<td>" . ($row["day_of_month"] ? $row["day_of_month"] : "N/A") . "</td>";
                 echo "<td>" . ($row["last_added"] ? $row["last_added"] : "Not yet added") . "</td>";
+                echo "<td>
+                        <form method='post' action='' onsubmit='return confirm(\"Are you sure you want to delete this task?\");'>
+                            <input type='hidden' name='action' value='delete'>
+                            <input type='hidden' name='task_id' value='" . $row["id"] . "'>
+                            <input type='submit' value='Delete' class='delete-btn'>
+                        </form>
+                      </td>";
                 echo "</tr>";
             }
         } else {
-            echo "<tr><td colspan='8'>No periodic tasks found</td></tr>";
+            echo "<tr><td colspan='9'>No periodic tasks found</td></tr>";
         }
         ?>
     </table>
