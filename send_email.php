@@ -1,5 +1,5 @@
 <?php
-include '../public_html/db/connection.php';
+include '/home/a57ewz3cwx9h/public_html/db/connection.php';
 
 // Function to send email
 function sendEmail($to, $subject, $message) {
