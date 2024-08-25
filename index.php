@@ -88,44 +88,7 @@ $tags_result = $conn->query($sql);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Task Manager</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        form {
-            margin-bottom: 20px;
-        }
-        input[type="text"], select {
-            width: 30%;
-            padding: 10px;
-            margin-right: 10px;
-        }
-        input[type="submit"] {
-            padding: 10px 20px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-        .delete {
-            color: red;
-            text-decoration: none;
-        }
-        .filter-form {
-            margin-bottom: 20px;
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <h1>Task Manager V0.3</h1>
@@ -189,18 +152,7 @@ $tags_result = $conn->query($sql);
         ?>
     </table>
 
-    <script>
-        document.getElementById('tag-select').addEventListener('change', function() {
-            var newTagInput = document.getElementById('new-tag-input');
-            if (this.value === 'new') {
-                newTagInput.style.display = 'inline-block';
-                newTagInput.required = true;
-            } else {
-                newTagInput.style.display = 'none';
-                newTagInput.required = false;
-            }
-        });
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
 
