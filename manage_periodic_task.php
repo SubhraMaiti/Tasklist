@@ -6,12 +6,29 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
+// Alter periodic_tasks table to add day_of_week and day_of_month columns
+$sql = "SHOW COLUMNS FROM periodic_tasks LIKE 'day_of_week'";
+$result = $conn->query($sql);
+if ($result->num_rows == 0) {
+    $sql = "ALTER TABLE periodic_tasks ADD COLUMN day_of_week INT(1)";
+    $conn->query($sql);
+}
+
+$sql = "SHOW COLUMNS FROM periodic_tasks LIKE 'day_of_month'";
+$result = $conn->query($sql);
+if ($result->num_rows == 0) {
+    $sql = "ALTER TABLE periodic_tasks ADD COLUMN day_of_month INT(2)";
+    $conn->query($sql);
+}
+
 // Handle form submission
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $description = $_POST["description"];
     $tag = $_POST["tag"];
     $frequency = $_POST["frequency"];
     $specific_date = ($frequency == 'specific_date') ? $_POST["specific_date"] : null;
+    $day_of_week = ($frequency == 'weekly') ? $_POST["day_of_week"] : null;
+    $day_of_month = ($frequency == 'monthly') ? $_POST["day_of_month"] : null;
 
     // Handle new tag
     if ($tag == "new" && !empty($_POST["new_tag"])) {
@@ -28,9 +45,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $tag_id = null;
     }
 
-    $sql = "INSERT INTO periodic_tasks (description, tag_id, frequency, specific_date) VALUES (?, ?, ?, ?)";
+    $sql = "INSERT INTO periodic_tasks (description, tag_id, frequency, specific_date, day_of_week, day_of_month) VALUES (?, ?, ?, ?, ?, ?)";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("siss", $description, $tag_id, $frequency, $specific_date);
+    $stmt->bind_param("sissii", $description, $tag_id, $frequency, $specific_date, $day_of_week, $day_of_month);
     $stmt->execute();
     $stmt->close();
 }
@@ -75,6 +92,20 @@ $tags_result = $conn->query($sql);
             <option value="weekly">Weekly</option>
             <option value="specific_date">Specific Date</option>
         </select>
+        <select name="day_of_week" id="day-of-week-select" style="display: none;">
+            <option value="1">Monday</option>
+            <option value="2">Tuesday</option>
+            <option value="3">Wednesday</option>
+            <option value="4">Thursday</option>
+            <option value="5">Friday</option>
+            <option value="6">Saturday</option>
+            <option value="7">Sunday</option>
+        </select>
+        <select name="day_of_month" id="day-of-month-select" style="display: none;">
+            <?php for ($i = 1; $i <= 31; $i++): ?>
+                <option value="<?php echo $i; ?>"><?php echo $i; ?></option>
+            <?php endfor; ?>
+        </select>
         <input type="date" name="specific_date" id="specific-date-input" style="display: none;">
         <input type="submit" value="Add Periodic Task">
     </form>
@@ -87,6 +118,8 @@ $tags_result = $conn->query($sql);
             <th>Tag</th>
             <th>Frequency</th>
             <th>Specific Date</th>
+            <th>Day of Week</th>
+            <th>Day of Month</th>
             <th>Last Added</th>
         </tr>
         <?php
@@ -98,11 +131,13 @@ $tags_result = $conn->query($sql);
                 echo "<td>" . htmlspecialchars($row["tag_name"]) . "</td>";
                 echo "<td>" . $row["frequency"] . "</td>";
                 echo "<td>" . ($row["specific_date"] ? $row["specific_date"] : "N/A") . "</td>";
+                echo "<td>" . ($row["day_of_week"] ? date('l', strtotime("Sunday +{$row['day_of_week']} days")) : "N/A") . "</td>";
+                echo "<td>" . ($row["day_of_month"] ? $row["day_of_month"] : "N/A") . "</td>";
                 echo "<td>" . ($row["last_added"] ? $row["last_added"] : "Not yet added") . "</td>";
                 echo "</tr>";
             }
         } else {
-            echo "<tr><td colspan='6'>No periodic tasks found</td></tr>";
+            echo "<tr><td colspan='8'>No periodic tasks found</td></tr>";
         }
         ?>
     </table>

@@ -6,20 +6,10 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Create periodic_tasks table if not exists
-$sql = "CREATE TABLE IF NOT EXISTS periodic_tasks (
-    id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    description VARCHAR(255) NOT NULL,
-    tag_id INT(6) UNSIGNED,
-    frequency ENUM('monthly', 'weekly', 'specific_date') NOT NULL,
-    specific_date DATE,
-    last_added DATE,
-    FOREIGN KEY (tag_id) REFERENCES tags(id)
-)";
-$conn->query($sql);
-
 // Get current date
 $current_date = date('Y-m-d');
+$current_day_of_week = date('N'); // 1 (for Monday) through 7 (for Sunday)
+$current_day_of_month = date('j');
 
 // Fetch periodic tasks
 $sql = "SELECT * FROM periodic_tasks";
@@ -30,12 +20,14 @@ while ($row = $result->fetch_assoc()) {
 
     switch ($row['frequency']) {
         case 'monthly':
-            // Check if it's been a month since last added
-            $should_add = (strtotime($current_date) - strtotime($row['last_added'])) >= 30 * 24 * 60 * 60;
+            // Check if it's the specified day of the month and it hasn't been added this month
+            $should_add = $current_day_of_month == $row['day_of_month'] && 
+                          (empty($row['last_added']) || date('Y-m', strtotime($row['last_added'])) != date('Y-m'));
             break;
         case 'weekly':
-            // Check if it's been a week since last added
-            $should_add = (strtotime($current_date) - strtotime($row['last_added'])) >= 7 * 24 * 60 * 60;
+            // Check if it's the specified day of the week and it hasn't been added this week
+            $should_add = $current_day_of_week == $row['day_of_week'] && 
+                          (empty($row['last_added']) || strtotime($row['last_added']) < strtotime('last ' . date('l', strtotime("Sunday +{$row['day_of_week']} days"))));
             break;
         case 'specific_date':
             // Check if it's the specific date and hasn't been added today
