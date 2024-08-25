@@ -124,7 +124,7 @@ $tags_result = $conn->query($sql);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Task Manager</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="index_styles.css">
 </head>
 <body>
     <h1>Task Manager V0.4</h1>
