@@ -13,7 +13,7 @@ $sql = "CREATE TABLE IF NOT EXISTS tags (
 )";
 $conn->query($sql);
 
-// Alter tasks table to add tag_id column if not exists
+// Alter tasks table to add tag_id and completed columns if not exists
 $sql = "SHOW COLUMNS FROM tasks LIKE 'tag_id'";
 $result = $conn->query($sql);
 if ($result->num_rows == 0) {
@@ -21,32 +21,48 @@ if ($result->num_rows == 0) {
     $conn->query($sql);
 }
 
+$sql = "SHOW COLUMNS FROM tasks LIKE 'completed'";
+$result = $conn->query($sql);
+if ($result->num_rows == 0) {
+    $sql = "ALTER TABLE tasks ADD COLUMN completed BOOLEAN DEFAULT FALSE";
+    $conn->query($sql);
+}
+
 // Handle form submission
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $task = $_POST["task"];
-    $date = date("Y-m-d");
-    $tag = $_POST["tag"];
-    
-    // Handle new tag
-    if ($tag == "new" && !empty($_POST["new_tag"])) {
-        $new_tag = $_POST["new_tag"];
-        $sql = "INSERT IGNORE INTO tags (name) VALUES (?)";
+    if (isset($_POST['task'])) {
+        $task = $_POST["task"];
+        $date = date("Y-m-d");
+        $tag = $_POST["tag"];
+        
+        // Handle new tag
+        if ($tag == "new" && !empty($_POST["new_tag"])) {
+            $new_tag = $_POST["new_tag"];
+            $sql = "INSERT IGNORE INTO tags (name) VALUES (?)";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("s", $new_tag);
+            $stmt->execute();
+            $tag_id = $stmt->insert_id;
+            $stmt->close();
+        } elseif ($tag != "new") {
+            $tag_id = $tag;
+        } else {
+            $tag_id = null;
+        }
+        
+        $sql = "INSERT INTO tasks (description, date_added, tag_id, completed) VALUES (?, ?, ?, FALSE)";
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("s", $new_tag);
+        $stmt->bind_param("ssi", $task, $date, $tag_id);
         $stmt->execute();
-        $tag_id = $stmt->insert_id;
         $stmt->close();
-    } elseif ($tag != "new") {
-        $tag_id = $tag;
-    } else {
-        $tag_id = null;
+    } elseif (isset($_POST['complete_task'])) {
+        $task_id = $_POST['complete_task'];
+        $sql = "UPDATE tasks SET completed = TRUE WHERE id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("i", $task_id);
+        $stmt->execute();
+        $stmt->close();
     }
-    
-    $sql = "INSERT INTO tasks (description, date_added, tag_id) VALUES (?, ?, ?)";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("ssi", $task, $date, $tag_id);
-    $stmt->execute();
-    $stmt->close();
 }
 
 // Handle task deletion
@@ -59,20 +75,40 @@ if (isset($_GET['delete'])) {
     $stmt->close();
 }
 
-// Fetch tasks with optional tag filter
+// Fetch tasks with optional tag filter and completion status
 $filter_tag = isset($_GET['filter_tag']) ? $_GET['filter_tag'] : '';
-$sql = "SELECT tasks.id, tasks.description, tasks.date_added, tags.name AS tag_name, tags.id AS tag_id 
+$show_completed = isset($_GET['show_completed']) ? $_GET['show_completed'] : 'false';
+$filter_date = isset($_GET['filter_date']) ? $_GET['filter_date'] : '';
+
+$sql = "SELECT tasks.id, tasks.description, tasks.date_added, tags.name AS tag_name, tags.id AS tag_id, tasks.completed 
         FROM tasks 
-        LEFT JOIN tags ON tasks.tag_id = tags.id";
+        LEFT JOIN tags ON tasks.tag_id = tags.id
+        WHERE 1=1";
+
 if (!empty($filter_tag)) {
-    $sql .= " WHERE tasks.tag_id = ?";
+    $sql .= " AND tasks.tag_id = ?";
 }
+
+if ($show_completed === 'false') {
+    $sql .= " AND tasks.completed = FALSE";
+}
+
+if (!empty($filter_date)) {
+    $sql .= " AND tasks.date_added = ?";
+}
+
 $sql .= " ORDER BY tasks.date_added DESC";
 
 $stmt = $conn->prepare($sql);
-if (!empty($filter_tag)) {
+
+if (!empty($filter_tag) && !empty($filter_date)) {
+    $stmt->bind_param("is", $filter_tag, $filter_date);
+} elseif (!empty($filter_tag)) {
     $stmt->bind_param("i", $filter_tag);
+} elseif (!empty($filter_date)) {
+    $stmt->bind_param("s", $filter_date);
 }
+
 $stmt->execute();
 $result = $stmt->get_result();
 $stmt->close();
@@ -91,7 +127,7 @@ $tags_result = $conn->query($sql);
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h1>Task Manager V0.3</h1>
+    <h1>Task Manager V0.4</h1>
     
     <form method="post" action="">
         <input type="text" name="task" placeholder="Enter your task" required>
@@ -122,6 +158,11 @@ $tags_result = $conn->query($sql);
                 </option>
             <?php endwhile; ?>
         </select>
+        <input type="date" name="filter_date" value="<?php echo $filter_date; ?>">
+        <select name="show_completed">
+            <option value="false" <?php echo ($show_completed === 'false') ? 'selected' : ''; ?>>Hide Completed</option>
+            <option value="true" <?php echo ($show_completed === 'true') ? 'selected' : ''; ?>>Show Completed</option>
+        </select>
         <input type="submit" value="Filter">
     </form>
     
@@ -137,12 +178,20 @@ $tags_result = $conn->query($sql);
         if ($result->num_rows > 0) {
             $serial_number = 1;
             while($row = $result->fetch_assoc()) {
-                echo "<tr>";
+                echo "<tr" . ($row["completed"] ? ' class="completed"' : '') . ">";
                 echo "<td>" . $serial_number . "</td>";
                 echo "<td>" . htmlspecialchars($row["description"]) . "</td>";
                 echo "<td>" . $row["date_added"] . "</td>";
                 echo "<td>" . htmlspecialchars($row["tag_name"]) . "</td>";
-                echo "<td><a href='?delete=" . $row["id"] . "&filter_tag=" . $filter_tag . "' class='delete'>Delete</a></td>";
+                echo "<td>";
+                if (!$row["completed"]) {
+                    echo "<form method='post' action='' style='display:inline;'>";
+                    echo "<input type='hidden' name='complete_task' value='" . $row["id"] . "'>";
+                    echo "<input type='submit' value='Complete' class='complete-btn'>";
+                    echo "</form>";
+                }
+                echo "<a href='?delete=" . $row["id"] . "&filter_tag=" . $filter_tag . "&show_completed=" . $show_completed . "&filter_date=" . $filter_date . "' class='delete'>Delete</a>";
+                echo "</td>";
                 echo "</tr>";
                 $serial_number++;
             }

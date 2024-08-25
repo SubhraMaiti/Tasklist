@@ -9,7 +9,7 @@ form {
     margin-bottom: 20px;
 }
 
-input[type="text"], select {
+input[type="text"], select, input[type="date"] {
     width: 30%;
     padding: 10px;
     margin-right: 10px;
@@ -37,8 +37,27 @@ th {
 .delete {
     color: red;
     text-decoration: none;
+    margin-left: 10px;
 }
 
 .filter-form {
     margin-bottom: 20px;
+}
+
+.completed {
+    background-color: #e0e0e0;
+    text-decoration: line-through;
+}
+
+.complete-btn {
+    background-color: #4CAF50;
+    border: none;
+    color: white;
+    padding: 5px 10px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 12px;
+    margin: 2px 2px;
+    cursor: pointer;
 }
