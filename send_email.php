@@ -21,7 +21,7 @@ if ($conn->connect_error) {
 $sql = "SELECT tasks.description, tasks.date_added 
         FROM tasks 
         JOIN tags ON tasks.tag_id = tags.id 
-        WHERE tags.name = 'home' AND tasks.completed = FALSE 
+        WHERE tags.name = 'Home' AND tasks.completed = FALSE 
         ORDER BY tasks.date_added DESC";
 
 $result = $conn->query($sql);
