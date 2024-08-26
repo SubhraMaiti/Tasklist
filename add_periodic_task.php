@@ -6,6 +6,9 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
+//Set time zone to kolkata
+date_default_timezone_set('Asia/Kolkata');
+
 // Get current date
 $current_date = date('Y-m-d');
 $current_day_of_week = date('N'); // 1 (for Monday) through 7 (for Sunday)
