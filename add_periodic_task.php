@@ -1,4 +1,5 @@
 <?php
+//New db path updated
 include '/home/a57ewz3cwx9h/public_html/db/connection.php';
 $conn = new mysqli($servername, $username, $password, $dbname);
 
