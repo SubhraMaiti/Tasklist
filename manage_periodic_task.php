@@ -6,7 +6,61 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// ... (previous code remains unchanged)
+// Alter periodic_tasks table to add day_of_week and day_of_month columns
+$sql = "SHOW COLUMNS FROM periodic_tasks LIKE 'day_of_week'";
+$result = $conn->query($sql);
+if ($result->num_rows == 0) {
+    $sql = "ALTER TABLE periodic_tasks ADD COLUMN day_of_week INT(1)";
+    $conn->query($sql);
+}
+
+$sql = "SHOW COLUMNS FROM periodic_tasks LIKE 'day_of_month'";
+$result = $conn->query($sql);
+if ($result->num_rows == 0) {
+    $sql = "ALTER TABLE periodic_tasks ADD COLUMN day_of_month INT(2)";
+    $conn->query($sql);
+}
+
+// Handle form submission for adding new task
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['action'] == 'add') {
+    $description = $_POST["description"];
+    $tag = $_POST["tag"];
+    $frequency = $_POST["frequency"];
+    $specific_date = ($frequency == 'specific_date') ? $_POST["specific_date"] : null;
+    $day_of_week = ($frequency == 'weekly') ? $_POST["day_of_week"] : null;
+    $day_of_month = ($frequency == 'monthly') ? $_POST["day_of_month"] : null;
+
+    // Handle new tag
+    if ($tag == "new" && !empty($_POST["new_tag"])) {
+        $new_tag = $_POST["new_tag"];
+        $sql = "INSERT IGNORE INTO tags (name) VALUES (?)";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("s", $new_tag);
+        $stmt->execute();
+        $tag_id = $stmt->insert_id;
+        $stmt->close();
+    } elseif ($tag != "new") {
+        $tag_id = $tag;
+    } else {
+        $tag_id = null;
+    }
+
+    $sql = "INSERT INTO periodic_tasks (description, tag_id, frequency, specific_date, day_of_week, day_of_month) VALUES (?, ?, ?, ?, ?, ?)";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("sissii", $description, $tag_id, $frequency, $specific_date, $day_of_week, $day_of_month);
+    $stmt->execute();
+    $stmt->close();
+}
+
+// Handle deletion of periodic task
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['action'] == 'delete') {
+    $task_id = $_POST['task_id'];
+    $sql = "DELETE FROM periodic_tasks WHERE id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $task_id);
+    $stmt->execute();
+    $stmt->close();
+}
 
 // Fetch periodic tasks
 $sql = "SELECT periodic_tasks.*, tags.name AS tag_name 
@@ -31,12 +85,46 @@ $tags_result = $conn->query($sql);
 <body>
     <h1>Manage Periodic Tasks</h1>
     
-    <!-- ... (form and other HTML elements remain unchanged) -->
+    <form method="post" action="">
+        <input type="hidden" name="action" value="add">
+        <input type="text" name="description" placeholder="Enter task description" required>
+        <select name="tag" id="tag-select">
+            <option value="">Select a tag</option>
+            <?php 
+            while($tag = $tags_result->fetch_assoc()): 
+            ?>
+                <option value="<?php echo $tag['id']; ?>"><?php echo htmlspecialchars($tag['name']); ?></option>
+            <?php endwhile; ?>
+            <option value="new">Add new tag</option>
+        </select>
+        <input type="text" name="new_tag" id="new-tag-input" placeholder="Enter new tag" style="display: none;">
+        <select name="frequency" id="frequency-select">
+            <option value="monthly">Monthly</option>
+            <option value="weekly">Weekly</option>
+            <option value="specific_date">Specific Date</option>
+        </select>
+        <select name="day_of_week" id="day-of-week-select" style="display: none;">
+            <option value="1">Monday</option>
+            <option value="2">Tuesday</option>
+            <option value="3">Wednesday</option>
+            <option value="4">Thursday</option>
+            <option value="5">Friday</option>
+            <option value="6">Saturday</option>
+            <option value="7">Sunday</option>
+        </select>
+        <select name="day_of_month" id="day-of-month-select" style="display: none;">
+            <?php for ($i = 1; $i <= 31; $i++): ?>
+                <option value="<?php echo $i; ?>"><?php echo $i; ?></option>
+            <?php endfor; ?>
+        </select>
+        <input type="date" name="specific_date" id="specific-date-input" style="display: none;">
+        <input type="submit" value="Add Periodic Task">
+    </form>
     
     <h2>Periodic Tasks List</h2>
     <table>
         <tr>
-            <th>No.</th>
+            <th>ID</th>
             <th>Description</th>
             <th>Tag</th>
             <th>Frequency</th>
@@ -48,10 +136,9 @@ $tags_result = $conn->query($sql);
         </tr>
         <?php
         if ($result->num_rows > 0) {
-            $row_number = 1; // Initialize the row number counter
             while($row = $result->fetch_assoc()) {
                 echo "<tr>";
-                echo "<td>" . $row_number . "</td>"; // Display the continuous row number
+                echo "<td>" . $row["id"] . "</td>";
                 echo "<td>" . htmlspecialchars($row["description"]) . "</td>";
                 echo "<td>" . htmlspecialchars($row["tag_name"]) . "</td>";
                 echo "<td>" . $row["frequency"] . "</td>";
@@ -67,7 +154,6 @@ $tags_result = $conn->query($sql);
                         </form>
                       </td>";
                 echo "</tr>";
-                $row_number++; // Increment the row number for the next iteration
             }
         } else {
             echo "<tr><td colspan='9'>No periodic tasks found</td></tr>";
