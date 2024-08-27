@@ -201,7 +201,7 @@ $tags_result = $conn->query($sql);
         ?>
     </table>
 
-    <script src="script.js"></script>
+    <script src="index_script.js"></script>
 </body>
 </html>
 
