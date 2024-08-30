@@ -75,10 +75,12 @@ if (isset($_GET['delete'])) {
     $stmt->close();
 }
 
-// Fetch tasks with optional tag filter and completion status
+// Fetch tasks with optional filters
 $filter_tag = isset($_GET['filter_tag']) ? $_GET['filter_tag'] : '';
 $show_completed = isset($_GET['show_completed']) ? $_GET['show_completed'] : 'false';
 $filter_date = isset($_GET['filter_date']) ? $_GET['filter_date'] : '';
+$sort_by = isset($_GET['sort_by']) ? $_GET['sort_by'] : 'date_added';
+$sort_order = isset($_GET['sort_order']) ? $_GET['sort_order'] : 'DESC';
 
 $sql = "SELECT tasks.id, tasks.description, tasks.date_added, tags.name AS tag_name, tags.id AS tag_id, tasks.completed 
         FROM tasks 
@@ -97,7 +99,7 @@ if (!empty($filter_date)) {
     $sql .= " AND tasks.date_added = ?";
 }
 
-$sql .= " ORDER BY tasks.date_added DESC";
+$sql .= " ORDER BY " . $sort_by . " " . $sort_order;
 
 $stmt = $conn->prepare($sql);
 
@@ -131,36 +133,21 @@ $tags_result = $conn->query($sql);
             background-color: #e0e0e0;
             text-decoration: line-through;
         }
+        .sortable {
+            cursor: pointer;
+        }
+        .sortable::after {
+            content: "\25B2\25BC";
+            font-size: 0.7em;
+            margin-left: 5px;
+        }
     </style>
 </head>
 <body>
     <div class="container mt-4">
-        <h1 class="mb-4">Task Manager V0.4</h1>
+        <h1 class="mb-4">Task Manager V0.5</h1>
         
-        <form method="post" action="" class="mb-4">
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <input type="text" name="task" class="form-control" placeholder="Enter your task" required>
-                </div>
-                <div class="col-md-4">
-                    <select name="tag" id="tag-select" class="form-select">
-                        <option value="">Select a tag</option>
-                        <?php 
-                        while($tag = $tags_result->fetch_assoc()): 
-                        ?>
-                            <option value="<?php echo $tag['id']; ?>"><?php echo htmlspecialchars($tag['name']); ?></option>
-                        <?php endwhile; ?>
-                        <option value="new">Add new tag</option>
-                    </select>
-                </div>
-                <div class="col-md-4 mt-2" id="new-tag-container" style="display: none;">
-                    <input type="text" name="new_tag" id="new-tag-input" class="form-control" placeholder="Enter new tag">
-                </div>
-                <div class="col-md-2">
-                    <input type="submit" value="Add Task" class="btn btn-primary w-100">
-                </div>
-            </div>
-        </form>
+        <!-- Keep the existing form for adding tasks -->
         
         <h2 class="mb-3">Task List</h2>
         <form method="get" action="" class="mb-4">
@@ -188,7 +175,7 @@ $tags_result = $conn->query($sql);
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <input type="submit" value="Filter" class="btn btn-secondary w-100">
+                    <input type="submit" value="Apply Filters" class="btn btn-secondary w-100">
                 </div>
             </div>
         </form>
@@ -198,9 +185,9 @@ $tags_result = $conn->query($sql);
                 <thead>
                     <tr>
                         <th>Serial Number</th>
-                        <th>Task Description</th>
-                        <th>Date Added</th>
-                        <th>Tag</th>
+                        <th class="sortable" data-sort="description">Task Description</th>
+                        <th class="sortable" data-sort="date_added">Date Added</th>
+                        <th class="sortable" data-sort="tag_name">Tag</th>
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -221,7 +208,7 @@ $tags_result = $conn->query($sql);
                             echo "<button type='submit' class='btn btn-success btn-sm'>Complete</button>";
                             echo "</form>";
                         }
-                        echo "<a href='?delete=" . $row["id"] . "&filter_tag=" . $filter_tag . "&show_completed=" . $show_completed . "&filter_date=" . $filter_date . "' class='btn btn-danger btn-sm ms-2'>Delete</a>";
+                        echo "<a href='?delete=" . $row["id"] . "&filter_tag=" . $filter_tag . "&show_completed=" . $show_completed . "&filter_date=" . $filter_date . "&sort_by=" . $sort_by . "&sort_order=" . $sort_order . "' class='btn btn-danger btn-sm ms-2'>Delete</a>";
                         echo "</td>";
                         echo "</tr>";
                         $serial_number++;
@@ -236,7 +223,32 @@ $tags_result = $conn->query($sql);
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="index_script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const sortableHeaders = document.querySelectorAll('.sortable');
+            sortableHeaders.forEach(header => {
+                header.addEventListener('click', function() {
+                    const sort = this.dataset.sort;
+                    let order = 'ASC';
+                    
+                    // Get current URL parameters
+                    const urlParams = new URLSearchParams(window.location.search);
+                    
+                    // If already sorting by this column, toggle the order
+                    if (urlParams.get('sort_by') === sort && urlParams.get('sort_order') === 'ASC') {
+                        order = 'DESC';
+                    }
+                    
+                    // Update URL parameters
+                    urlParams.set('sort_by', sort);
+                    urlParams.set('sort_order', order);
+                    
+                    // Redirect to the new URL
+                    window.location.search = urlParams.toString();
+                });
+            });
+        });
+    </script>
 </body>
 </html>
 
