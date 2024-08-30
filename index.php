@@ -77,8 +77,8 @@ if (isset($_GET['delete'])) {
 
 // Fetch tasks with optional filters
 $filter_tag = isset($_GET['filter_tag']) ? $_GET['filter_tag'] : '';
-$show_completed = isset($_GET['show_completed']) ? $_GET['show_completed'] : 'false';
 $filter_date = isset($_GET['filter_date']) ? $_GET['filter_date'] : '';
+$show_completed = isset($_GET['show_completed']) ? $_GET['show_completed'] : 'false';
 $sort_by = isset($_GET['sort_by']) ? $_GET['sort_by'] : 'date_added';
 $sort_order = isset($_GET['sort_order']) ? $_GET['sort_order'] : 'DESC';
 
@@ -91,12 +91,12 @@ if (!empty($filter_tag)) {
     $sql .= " AND tasks.tag_id = ?";
 }
 
-if ($show_completed === 'false') {
-    $sql .= " AND tasks.completed = FALSE";
-}
-
 if (!empty($filter_date)) {
     $sql .= " AND tasks.date_added = ?";
+}
+
+if ($show_completed === 'false') {
+    $sql .= " AND tasks.completed = FALSE";
 }
 
 $sql .= " ORDER BY " . $sort_by . " " . $sort_order;
@@ -145,40 +145,34 @@ $tags_result = $conn->query($sql);
 </head>
 <body>
     <div class="container mt-4">
-        <h1 class="mb-4">Task Manager V0.5</h1>
+        <h1 class="mb-4">Task Manager V0.6</h1>
         
-        <!-- Keep the existing form for adding tasks -->
-        
-        <h2 class="mb-3">Task List</h2>
-        <form method="get" action="" class="mb-4">
+        <form method="post" action="" class="mb-4">
             <div class="row g-3">
+                <div class="col-md-6">
+                    <input type="text" name="task" class="form-control" placeholder="Enter your task" required>
+                </div>
                 <div class="col-md-4">
-                    <select name="filter_tag" class="form-select">
-                        <option value="">All Tags</option>
+                    <select name="tag" id="tag-select" class="form-select">
+                        <option value="">Select a tag</option>
                         <?php 
-                        $tags_result->data_seek(0);
                         while($tag = $tags_result->fetch_assoc()): 
                         ?>
-                            <option value="<?php echo $tag['id']; ?>" <?php echo ($filter_tag == $tag['id']) ? 'selected' : ''; ?>>
-                                <?php echo htmlspecialchars($tag['name']); ?>
-                            </option>
+                            <option value="<?php echo $tag['id']; ?>"><?php echo htmlspecialchars($tag['name']); ?></option>
                         <?php endwhile; ?>
+                        <option value="new">Add new tag</option>
                     </select>
                 </div>
-                <div class="col-md-3">
-                    <input type="date" name="filter_date" class="form-control" value="<?php echo $filter_date; ?>">
-                </div>
-                <div class="col-md-3">
-                    <select name="show_completed" class="form-select">
-                        <option value="false" <?php echo ($show_completed === 'false') ? 'selected' : ''; ?>>Hide Completed</option>
-                        <option value="true" <?php echo ($show_completed === 'true') ? 'selected' : ''; ?>>Show Completed</option>
-                    </select>
+                <div class="col-md-4 mt-2" id="new-tag-container" style="display: none;">
+                    <input type="text" name="new_tag" id="new-tag-input" class="form-control" placeholder="Enter new tag">
                 </div>
                 <div class="col-md-2">
-                    <input type="submit" value="Apply Filters" class="btn btn-secondary w-100">
+                    <input type="submit" value="Add Task" class="btn btn-primary w-100">
                 </div>
             </div>
         </form>
+        
+        <h2 class="mb-3">Task List</h2>
         
         <div class="table-responsive">
             <table class="table table-striped table-hover">
@@ -188,6 +182,7 @@ $tags_result = $conn->query($sql);
                         <th class="sortable" data-sort="description">Task Description</th>
                         <th class="sortable" data-sort="date_added">Date Added</th>
                         <th class="sortable" data-sort="tag_name">Tag</th>
+                        <th class="sortable" data-sort="completed">Status</th>
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -201,6 +196,7 @@ $tags_result = $conn->query($sql);
                         echo "<td>" . htmlspecialchars($row["description"]) . "</td>";
                         echo "<td>" . $row["date_added"] . "</td>";
                         echo "<td>" . htmlspecialchars($row["tag_name"]) . "</td>";
+                        echo "<td>" . ($row["completed"] ? 'Completed' : 'Pending') . "</td>";
                         echo "<td>";
                         if (!$row["completed"]) {
                             echo "<form method='post' action='' class='d-inline'>";
@@ -208,13 +204,13 @@ $tags_result = $conn->query($sql);
                             echo "<button type='submit' class='btn btn-success btn-sm'>Complete</button>";
                             echo "</form>";
                         }
-                        echo "<a href='?delete=" . $row["id"] . "&filter_tag=" . $filter_tag . "&show_completed=" . $show_completed . "&filter_date=" . $filter_date . "&sort_by=" . $sort_by . "&sort_order=" . $sort_order . "' class='btn btn-danger btn-sm ms-2'>Delete</a>";
+                        echo "<a href='?delete=" . $row["id"] . "&sort_by=" . $sort_by . "&sort_order=" . $sort_order . "' class='btn btn-danger btn-sm ms-2'>Delete</a>";
                         echo "</td>";
                         echo "</tr>";
                         $serial_number++;
                     }
                 } else {
-                    echo "<tr><td colspan='5'>No tasks found</td></tr>";
+                    echo "<tr><td colspan='6'>No tasks found</td></tr>";
                 }
                 ?>
                 </tbody>
@@ -243,9 +239,40 @@ $tags_result = $conn->query($sql);
                     urlParams.set('sort_by', sort);
                     urlParams.set('sort_order', order);
                     
+                    // Handle filtering
+                    if (sort === 'tag_name') {
+                        const filterTag = prompt("Enter tag ID to filter (leave empty for all tags):");
+                        if (filterTag !== null) {
+                            urlParams.set('filter_tag', filterTag);
+                        }
+                    } else if (sort === 'date_added') {
+                        const filterDate = prompt("Enter date to filter (YYYY-MM-DD format, leave empty for all dates):");
+                        if (filterDate !== null) {
+                            urlParams.set('filter_date', filterDate);
+                        }
+                    } else if (sort === 'completed') {
+                        const showCompleted = confirm("Show completed tasks? (OK for Yes, Cancel for No)");
+                        urlParams.set('show_completed', showCompleted ? 'true' : 'false');
+                    }
+                    
                     // Redirect to the new URL
                     window.location.search = urlParams.toString();
                 });
+            });
+
+            // Handle new tag input
+            const tagSelect = document.getElementById('tag-select');
+            const newTagContainer = document.getElementById('new-tag-container');
+            const newTagInput = document.getElementById('new-tag-input');
+
+            tagSelect.addEventListener('change', function() {
+                if (this.value === 'new') {
+                    newTagContainer.style.display = 'block';
+                    newTagInput.required = true;
+                } else {
+                    newTagContainer.style.display = 'none';
+                    newTagInput.required = false;
+                }
             });
         });
     </script>
