@@ -6,7 +6,74 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// ... (previous code for creating tables and handling form submissions remains the same)
+// Create tags table if not exists
+$sql = "CREATE TABLE IF NOT EXISTS tags (
+    id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(30) NOT NULL UNIQUE
+)";
+$conn->query($sql);
+
+// Alter tasks table to add tag_id and completed columns if not exists
+$sql = "SHOW COLUMNS FROM tasks LIKE 'tag_id'";
+$result = $conn->query($sql);
+if ($result->num_rows == 0) {
+    $sql = "ALTER TABLE tasks ADD COLUMN tag_id INT(6) UNSIGNED, ADD FOREIGN KEY (tag_id) REFERENCES tags(id)";
+    $conn->query($sql);
+}
+
+$sql = "SHOW COLUMNS FROM tasks LIKE 'completed'";
+$result = $conn->query($sql);
+if ($result->num_rows == 0) {
+    $sql = "ALTER TABLE tasks ADD COLUMN completed BOOLEAN DEFAULT FALSE";
+    $conn->query($sql);
+}
+
+// Handle form submission
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    if (isset($_POST['task'])) {
+        $task = $_POST["task"];
+        $date = date("Y-m-d");
+        $tag = $_POST["tag"];
+
+        // Handle new tag
+        if ($tag == "new" && !empty($_POST["new_tag"])) {
+            $new_tag = $_POST["new_tag"];
+            $sql = "INSERT IGNORE INTO tags (name) VALUES (?)";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("s", $new_tag);
+            $stmt->execute();
+            $tag_id = $stmt->insert_id;
+            $stmt->close();
+        } elseif ($tag != "new") {
+            $tag_id = $tag;
+        } else {
+            $tag_id = null;
+        }
+
+        $sql = "INSERT INTO tasks (description, date_added, tag_id, completed) VALUES (?, ?, ?, FALSE)";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("ssi", $task, $date, $tag_id);
+        $stmt->execute();
+        $stmt->close();
+    } elseif (isset($_POST['complete_task'])) {
+        $task_id = $_POST['complete_task'];
+        $sql = "UPDATE tasks SET completed = TRUE WHERE id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("i", $task_id);
+        $stmt->execute();
+        $stmt->close();
+    }
+}
+
+// Handle task deletion
+if (isset($_GET['delete'])) {
+    $id = $_GET['delete'];
+    $sql = "DELETE FROM tasks WHERE id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+    $stmt->close();
+}
 
 // Fetch tasks with optional filters
 $filter_tag = isset($_GET['filter_tag']) ? $_GET['filter_tag'] : '';
