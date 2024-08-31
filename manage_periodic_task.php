@@ -6,21 +6,6 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Alter periodic_tasks table to add day_of_week and day_of_month columns
-$sql = "SHOW COLUMNS FROM periodic_tasks LIKE 'day_of_week'";
-$result = $conn->query($sql);
-if ($result->num_rows == 0) {
-    $sql = "ALTER TABLE periodic_tasks ADD COLUMN day_of_week INT(1)";
-    $conn->query($sql);
-}
-
-$sql = "SHOW COLUMNS FROM periodic_tasks LIKE 'day_of_month'";
-$result = $conn->query($sql);
-if ($result->num_rows == 0) {
-    $sql = "ALTER TABLE periodic_tasks ADD COLUMN day_of_month INT(2)";
-    $conn->query($sql);
-}
-
 // Handle form submission for adding new task
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['action'] == 'add') {
     $description = $_POST["description"];
@@ -131,8 +116,9 @@ $tags_result = $conn->query($sql);
         </select>
         <input type="text" name="new_tag" id="new-tag-input" placeholder="Enter new tag" style="display: none;">
         <select name="frequency" id="frequency-select">
-            <option value="monthly">Monthly</option>
+            <option value="daily">Daily</option>
             <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
             <option value="specific_date">Specific Date</option>
         </select>
         <select name="day_of_week" id="day-of-week-select" style="display: none;">
@@ -163,8 +149,9 @@ $tags_result = $conn->query($sql);
                 Frequency
                 <div class="frequency-dropdown">
                     <a href="?">All</a>
-                    <a href="?frequency=monthly">Monthly</a>
+                    <a href="?frequency=daily">Daily</a>
                     <a href="?frequency=weekly">Weekly</a>
+                    <a href="?frequency=monthly">Monthly</a>
                     <a href="?frequency=specific_date">Specific Date</a>
                 </div>
             </th>
@@ -183,7 +170,7 @@ $tags_result = $conn->query($sql);
                 echo "<td>" . htmlspecialchars($row["tag_name"]) . "</td>";
                 echo "<td>" . $row["frequency"] . "</td>";
                 echo "<td>" . ($row["specific_date"] ? $row["specific_date"] : "N/A") . "</td>";
-                echo "<td>" . ($row["day_of_week"] ? date('l', strtotime("Sunday +{$row['day_of_week']} days")) : "N/A") . "</td>";
+                echo "<td>" . ($row["day_of_week"] ? date('l', strtotime("Sunday +{$row['day_of_week']} days")) : ($row["frequency"] == "daily" ? "Every day" : "N/A")) . "</td>";
                 echo "<td>" . ($row["day_of_month"] ? $row["day_of_month"] : "N/A") . "</td>";
                 echo "<td>" . ($row["last_added"] ? $row["last_added"] : "Not yet added") . "</td>";
                 echo "<td>
