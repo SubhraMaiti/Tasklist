@@ -23,6 +23,10 @@ while ($row = $result->fetch_assoc()) {
     $should_add = false;
 
     switch ($row['frequency']) {
+        case 'daily':
+            // Check if it hasn't been added today
+            $should_add = empty($row['last_added']) || $row['last_added'] != $current_date;
+            break;
         case 'monthly':
             // Check if it's the specified day of the month and it hasn't been added this month
             $should_add = $current_day_of_month == $row['day_of_month'] && 
