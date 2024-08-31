@@ -29,7 +29,7 @@ if ($habit_id === null && $habits_result->num_rows > 0) {
 // Fetch completions for the current habit and month
 $sql = "SELECT DATE(date_added) as date, completed 
         FROM tasks 
-        WHERE periodic_task_id = ? AND MONTH(date_added) = ? AND YEAR(date_added) = ?";
+        WHERE id = ? AND MONTH(date_added) = ? AND YEAR(date_added) = ?";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("iii", $habit_id, $month, $year);
 $stmt->execute();
