@@ -13,10 +13,10 @@ $year = isset($_GET['year']) ? intval($_GET['year']) : intval(date('Y'));
 // Get current habit ID
 $habit_id = isset($_GET['habit_id']) ? intval($_GET['habit_id']) : null;
 
-// Fetch habits with tag 'habit'
-$sql = "SELECT tasks.id, tasks.description 
-        FROM tasks 
-        JOIN tags ON tasks.tag_id = tags.id 
+// Fetch habits from periodic_tasks table with tag 'habit'
+$sql = "SELECT periodic_tasks.id, periodic_tasks.description 
+        FROM periodic_tasks 
+        JOIN tags ON periodic_tasks.tag_id = tags.id 
         WHERE tags.name = 'habit'";
 $habits_result = $conn->query($sql);
 
@@ -29,7 +29,7 @@ if ($habit_id === null && $habits_result->num_rows > 0) {
 // Fetch completions for the current habit and month
 $sql = "SELECT DATE(date_added) as date, completed 
         FROM tasks 
-        WHERE id = ? AND MONTH(date_added) = ? AND YEAR(date_added) = ?";
+        WHERE periodic_task_id = ? AND MONTH(date_added) = ? AND YEAR(date_added) = ?";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("iii", $habit_id, $month, $year);
 $stmt->execute();
@@ -40,17 +40,15 @@ while ($row = $completions_result->fetch_assoc()) {
     $completions[$row['date']] = $row['completed'];
 }
 
-// Helper function to get the name of the month
+// Helper functions
 function getMonthName($month) {
     return date('F', mktime(0, 0, 0, $month, 1, 2000));
 }
 
-// Helper function to get the number of days in a month
 function getDaysInMonth($month, $year) {
     return date('t', mktime(0, 0, 0, $month, 1, $year));
 }
 
-// Helper function to get the day of the week for the first day of the month
 function getFirstDayOfWeek($month, $year) {
     return date('w', mktime(0, 0, 0, $month, 1, $year));
 }
@@ -68,7 +66,9 @@ function getFirstDayOfWeek($month, $year) {
         .calendar {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            gap: 5px;
+            gap: 2px;
+            max-width: 400px;
+            margin: 0 auto;
         }
         .calendar-day {
             aspect-ratio: 1;
@@ -76,6 +76,7 @@ function getFirstDayOfWeek($month, $year) {
             justify-content: center;
             align-items: center;
             border: 1px solid #ddd;
+            font-size: 0.8em;
         }
         .completed {
             background-color: #28a745;
@@ -112,14 +113,14 @@ function getFirstDayOfWeek($month, $year) {
                 <h2><?php echo getMonthName($month) . " " . $year; ?></h2>
             </div>
             <div class="col-auto">
-                <a href="?month=<?php echo $month-1; ?>&year=<?php echo $year; ?>&habit_id=<?php echo $habit_id; ?>" class="btn btn-primary">&lt;</a>
-                <a href="?month=<?php echo $month+1; ?>&year=<?php echo $year; ?>&habit_id=<?php echo $habit_id; ?>" class="btn btn-primary">&gt;</a>
+                <a href="?month=<?php echo $month-1; ?>&year=<?php echo $year; ?>&habit_id=<?php echo $habit_id; ?>" class="btn btn-primary btn-sm">&lt;</a>
+                <a href="?month=<?php echo $month+1; ?>&year=<?php echo $year; ?>&habit_id=<?php echo $habit_id; ?>" class="btn btn-primary btn-sm">&gt;</a>
             </div>
         </div>
 
         <div class="calendar">
             <?php
-            $days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            $days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
             foreach ($days as $day) {
                 echo "<div class='calendar-day'><strong>$day</strong></div>";
             }
@@ -139,6 +140,8 @@ function getFirstDayOfWeek($month, $year) {
                         $class .= ' future';
                     } elseif (isset($completions[$date])) {
                         $class .= $completions[$date] ? ' completed' : ' not-completed';
+                    } else {
+                        $class .= ' not-completed'; // Task not found or not completed
                     }
                     echo "<div class='$class'>$currentDay</div>";
                     $currentDay++;
