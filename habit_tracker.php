@@ -21,6 +21,7 @@ $sql = "SELECT periodic_tasks.id, periodic_tasks.description
 $habits_result = $conn->query($sql);
 
 // If no habit_id is set, use the first habit
+//check
 if ($habit_id === null && $habits_result->num_rows > 0) {
     $habit = $habits_result->fetch_assoc();
     $habit_id = $habit['id'];
