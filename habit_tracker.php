@@ -26,11 +26,18 @@ if ($habit_id === null && $habits_result->num_rows > 0) {
     $habit_id = $habit['id'];
 }
 
+// Fetch the description for the current habit
+$sql = "SELECT description FROM periodic_tasks WHERE id = ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $habit_id);
+$stmt->execute();
+$result = $stmt->get_result();
+$habit_description = $result->fetch_assoc()['description'];
+
 // Fetch completions for the current habit and month
-$sql = "SELECT DATE(t.date_added) as date, t.completed 
-        FROM tasks t
-        JOIN periodic_tasks pt ON t.description = pt.description
-        WHERE pt.description = ? AND MONTH(t.date_added) = ? AND YEAR(t.date_added) = ?";
+$sql = "SELECT DATE(date_added) as date, completed 
+        FROM tasks
+        WHERE description = ? AND MONTH(date_added) = ? AND YEAR(date_added) = ?";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("sii", $habit_description, $month, $year);
 $stmt->execute();
@@ -142,7 +149,7 @@ function getFirstDayOfWeek($month, $year) {
                     } elseif (isset($completions[$date])) {
                         $class .= $completions[$date] ? ' completed' : ' not-completed';
                     } else {
-                        $class .= ' not-completed'; // Task not found or not completed
+                        $class .= ' not-completed';
                     }
                     echo "<div class='$class'>$currentDay</div>";
                     $currentDay++;
