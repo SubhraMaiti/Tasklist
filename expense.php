@@ -43,7 +43,7 @@ if (isset($_GET['delete'])) {
 }
 
 // Fetch expense tasks
-$sql = "SELECT id, description, date_added, completed FROM tasks WHERE tag_id = ? ORDER BY date_added DESC";
+$sql = "SELECT id, description, date_added, completed FROM tasks WHERE tag_id = ? AND completed = 0 ORDER BY date_added DESC";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $expense_tag_id);
 $stmt->execute();
