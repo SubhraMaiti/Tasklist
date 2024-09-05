@@ -25,9 +25,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['task'])) {
     $date = date("Y-m-d");
     $amount = isset($_POST["amount"]) ? floatval($_POST["amount"]) : 0;
 
-    $sql = "INSERT INTO tasks (description, date_added, tag_id, completed, amount) VALUES (?, ?, ?, FALSE, ?)";
+    $sql = "INSERT INTO tasks (description, date_added, tag_id, completed) VALUES (?, ?, ?, FALSE)";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("ssid", $task, $date, $expense_tag_id, $amount);
+    $stmt->bind_param("ssi", $task + " :" + $amount, $date, $expense_tag_id);
     $stmt->execute();
     $stmt->close();
 }
