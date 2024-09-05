@@ -24,7 +24,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['task'])) {
     $task = $_POST["task"];
     $date = date("Y-m-d");
     $amount = isset($_POST["amount"]) ? floatval($_POST["amount"]) : 0;
-    $task = $task . " :" . $amount;
+    $task = $task . " " . $amount;
 
     $sql = "INSERT INTO tasks (description, date_added, tag_id, completed) VALUES (?, ?, ?, FALSE)";
     $stmt = $conn->prepare($sql);
