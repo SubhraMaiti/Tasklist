@@ -43,7 +43,7 @@ if (isset($_GET['delete'])) {
 }
 
 // Fetch expense tasks
-$sql = "SELECT id, description, date_added, completed, amount FROM tasks WHERE tag_id = ? ORDER BY date_added DESC";
+$sql = "SELECT id, description, date_added, completed FROM tasks WHERE tag_id = ? ORDER BY date_added DESC";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $expense_tag_id);
 $stmt->execute();
@@ -90,8 +90,6 @@ $stmt->close();
                     <tr>
                         <th>Task Description</th>
                         <th>Date Added</th>
-                        <th>Amount</th>
-                        <th>Status</th>
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -102,7 +100,6 @@ $stmt->close();
                         echo "<tr" . ($row["completed"] ? ' class="completed"' : '') . ">";
                         echo "<td>" . htmlspecialchars($row["description"]) . "</td>";
                         echo "<td>" . $row["date_added"] . "</td>";
-                        echo "<td>$" . number_format($row["amount"], 2) . "</td>";
                         echo "<td>" . ($row["completed"] ? 'Completed' : 'Pending') . "</td>";
                         echo "<td>";
                         echo "<a href='?delete=" . $row["id"] . "' class='btn btn-danger btn-sm'>Delete</a>";
