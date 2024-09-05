@@ -24,10 +24,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['task'])) {
     $task = $_POST["task"];
     $date = date("Y-m-d");
     $amount = isset($_POST["amount"]) ? floatval($_POST["amount"]) : 0;
+    $task = $task + " :" + $amount;
 
     $sql = "INSERT INTO tasks (description, date_added, tag_id, completed) VALUES (?, ?, ?, FALSE)";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("ssi", $task + " :" + $amount, $date, $expense_tag_id);
+    $stmt->bind_param("ssi", $task, $date, $expense_tag_id);
     $stmt->execute();
     $stmt->close();
 }
