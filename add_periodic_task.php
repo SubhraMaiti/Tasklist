@@ -34,8 +34,11 @@ while ($row = $result->fetch_assoc()) {
             break;
         case 'weekly':
             // Check if it's the specified day of the week and it hasn't been added this week
+            //$should_add = $current_day_of_week == $row['day_of_week'] && 
+                          //(empty($row['last_added']) || strtotime($row['last_added']) < strtotime('last ' . date('l', strtotime("Sunday +{$row['day_of_week']} days"))));
+            $start_of_week = date('Y-m-d', strtotime('last Monday'));
             $should_add = $current_day_of_week == $row['day_of_week'] && 
-                          (empty($row['last_added']) || strtotime($row['last_added']) < strtotime('last ' . date('l', strtotime("Sunday +{$row['day_of_week']} days"))));
+                        (empty($row['last_added']) || $row['last_added'] < $start_of_week);
             break;
         case 'specific_date':
             // Check if it's the specific date and hasn't been added today
