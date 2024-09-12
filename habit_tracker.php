@@ -21,22 +21,19 @@ $sql = "SELECT periodic_tasks.id, periodic_tasks.description
 $habits_result = $conn->query($sql);
 
 // If no habit_id is set, use the first habit
+//check
 if ($habit_id === null && $habits_result->num_rows > 0) {
     $habit = $habits_result->fetch_assoc();
     $habit_id = $habit['id'];
 }
 
-// Fetch all habits into an array
-$habits = array();
-while ($habit = $habits_result->fetch_assoc()) {
-    $habits[] = $habit;
-}
-
-// Find the index of the current habit
-$current_habit_index = array_search($habit_id, array_column($habits, 'id'));
-
 // Fetch the description for the current habit
-$habit_description = $habits[$current_habit_index]['description'];
+$sql = "SELECT description FROM periodic_tasks WHERE id = ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $habit_id);
+$stmt->execute();
+$result = $stmt->get_result();
+$habit_description = $result->fetch_assoc()['description'];
 
 // Fetch completions for the current habit and month
 $sql = "SELECT DATE(date_added) as date, completed 
@@ -109,11 +106,14 @@ function getFirstDayOfWeek($month, $year) {
 
         <div class="row mb-3">
             <div class="col">
-                <div class="d-flex align-items-center">
-                    <button id="prev-habit" class="btn btn-primary btn-sm me-2">&lt;</button>
-                    <h3 id="current-habit" class="mb-0"><?php echo $habit_description; ?></h3>
-                    <button id="next-habit" class="btn btn-primary btn-sm ms-2">&gt;</button>
-                </div>
+                <select id="habit-select" class="form-select">
+                    <?php
+                    $habits_result->data_seek(0);
+                    while ($habit = $habits_result->fetch_assoc()) {
+                        echo "<option value='{$habit['id']}'" . ($habit['id'] == $habit_id ? " selected" : "") . ">{$habit['description']}</option>";
+                    }
+                    ?>
+                </select>
             </div>
         </div>
 
@@ -162,18 +162,9 @@ function getFirstDayOfWeek($month, $year) {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        const habits = <?php echo json_encode($habits); ?>;
-        let currentIndex = <?php echo $current_habit_index; ?>;
-
-        function updateHabit(direction) {
-            currentIndex = (currentIndex + direction + habits.length) % habits.length;
-            const habit = habits[currentIndex];
-            document.getElementById('current-habit').textContent = habit.description;
-            window.location.href = `?habit_id=${habit.id}&month=<?php echo $month; ?>&year=<?php echo $year; ?>`;
-        }
-
-        document.getElementById('prev-habit').addEventListener('click', () => updateHabit(-1));
-        document.getElementById('next-habit').addEventListener('click', () => updateHabit(1));
+        document.getElementById('habit-select').addEventListener('change', function() {
+            window.location.href = '?habit_id=' + this.value + '&month=<?php echo $month; ?>&year=<?php echo $year; ?>';
+        });
     </script>
 </body>
 </html>
