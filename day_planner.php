@@ -6,7 +6,7 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Alter tasks table to add planned_time column if not exists
+// Alter tasks table to add planned_time and duration columns if not exists
 $sql = "SHOW COLUMNS FROM tasks LIKE 'planned_time'";
 $result = $conn->query($sql);
 if ($result->num_rows == 0) {
@@ -14,14 +14,22 @@ if ($result->num_rows == 0) {
     $conn->query($sql);
 }
 
+$sql = "SHOW COLUMNS FROM tasks LIKE 'duration'";
+$result = $conn->query($sql);
+if ($result->num_rows == 0) {
+    $sql = "ALTER TABLE tasks ADD COLUMN duration INT DEFAULT 60";
+    $conn->query($sql);
+}
+
 // Handle task planning
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['task_id']) && isset($_POST['planned_time'])) {
     $task_id = $_POST['task_id'];
     $planned_time = $_POST['planned_time'];
+    $duration = isset($_POST['duration']) ? intval($_POST['duration']) : 60;
     
-    $sql = "UPDATE tasks SET planned_time = ? WHERE id = ?";
+    $sql = "UPDATE tasks SET planned_time = ?, duration = ? WHERE id = ?";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("si", $planned_time, $task_id);
+    $stmt->bind_param("sii", $planned_time, $duration, $task_id);
     $stmt->execute();
     $stmt->close();
     
@@ -33,7 +41,7 @@ $sql = "SELECT id, description, tag_id FROM tasks WHERE completed = FALSE AND pl
 $pending_tasks = $conn->query($sql);
 
 // Fetch planned tasks
-$sql = "SELECT id, description, planned_time FROM tasks WHERE completed = FALSE AND planned_time IS NOT NULL ORDER BY planned_time";
+$sql = "SELECT id, description, planned_time, duration FROM tasks WHERE completed = FALSE AND planned_time IS NOT NULL ORDER BY planned_time";
 $planned_tasks = $conn->query($sql);
 
 ?>
@@ -97,6 +105,16 @@ $planned_tasks = $conn->query($sql);
             position: absolute;
             left: 60px;
             right: 5px;
+            cursor: move;
+        }
+        .task-resize-handle {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background-color: rgba(0, 0, 0, 0.1);
+            cursor: ns-resize;
         }
     </style>
 </head>
@@ -169,10 +187,7 @@ $planned_tasks = $conn->query($sql);
                     .then(response => response.text())
                     .then(data => {
                         // Move the task to the timeline
-                        const plannedTask = document.createElement('div');
-                        plannedTask.className = 'planned-task';
-                        plannedTask.textContent = taskElement.textContent;
-                        plannedTask.dataset.taskId = taskId;
+                        const plannedTask = createPlannedTaskElement(taskId, taskElement.textContent, 60);
                         hourSlot.appendChild(plannedTask);
                         taskElement.remove();
                     })
@@ -182,14 +197,108 @@ $planned_tasks = $conn->query($sql);
                 }
             });
 
+            function createPlannedTaskElement(taskId, description, duration) {
+                const plannedTask = document.createElement('div');
+                plannedTask.className = 'planned-task';
+                plannedTask.textContent = description;
+                plannedTask.dataset.taskId = taskId;
+                plannedTask.style.height = `${duration}px`;
+                
+                const resizeHandle = document.createElement('div');
+                resizeHandle.className = 'task-resize-handle';
+                plannedTask.appendChild(resizeHandle);
+
+                plannedTask.addEventListener('mousedown', startDragging);
+                resizeHandle.addEventListener('mousedown', startResizing);
+
+                return plannedTask;
+            }
+
+            function startDragging(e) {
+                if (e.target.classList.contains('task-resize-handle')) return;
+                
+                const task = e.target.closest('.planned-task');
+                const shiftY = e.clientY - task.getBoundingClientRect().top;
+                
+                function moveAt(pageY) {
+                    const timeline = document.getElementById('day-timeline');
+                    const timelineRect = timeline.getBoundingClientRect();
+                    let top = pageY - shiftY - timelineRect.top;
+                    top = Math.max(0, Math.min(top, timelineRect.height - task.offsetHeight));
+                    task.style.top = top + 'px';
+                }
+
+                function onMouseMove(e) {
+                    moveAt(e.pageY);
+                }
+
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+
+                function onMouseUp() {
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.removeEventListener('mouseup', onMouseUp);
+                    updateTaskTime(task);
+                }
+            }
+
+            function startResizing(e) {
+                e.stopPropagation();
+                const task = e.target.closest('.planned-task');
+                const startY = e.clientY;
+                const startHeight = parseInt(task.style.height);
+                
+                function onMouseMove(e) {
+                    const newHeight = startHeight + e.clientY - startY;
+                    task.style.height = `${Math.max(30, newHeight)}px`;
+                }
+
+                function onMouseUp() {
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.removeEventListener('mouseup', onMouseUp);
+                    updateTaskTime(task);
+                }
+
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+            }
+
+            function updateTaskTime(task) {
+                const timeline = document.getElementById('day-timeline');
+                const timelineRect = timeline.getBoundingClientRect();
+                const taskRect = task.getBoundingClientRect();
+                const taskTop = taskRect.top - timelineRect.top;
+                const hourHeight = 60;
+                const startHour = Math.floor(taskTop / hourHeight) + 5;
+                const duration = Math.round(taskRect.height);
+
+                const plannedTime = `${String(startHour).padStart(2, '0')}:00`;
+
+                fetch('day_planner.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `task_id=${task.dataset.taskId}&planned_time=${plannedTime}&duration=${duration}`
+                })
+                .then(response => response.text())
+                .then(data => {
+                    console.log('Task updated successfully');
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                });
+            }
+
             // Initialize planned tasks
             <?php while($task = $planned_tasks->fetch_assoc()): ?>
             const hourSlot = document.querySelector(`.hour-slot[data-hour="<?php echo substr($task['planned_time'], 0, 5); ?>"]`);
             if (hourSlot) {
-                const plannedTask = document.createElement('div');
-                plannedTask.className = 'planned-task';
-                plannedTask.textContent = "<?php echo addslashes($task['description']); ?>";
-                plannedTask.dataset.taskId = "<?php echo $task['id']; ?>";
+                const plannedTask = createPlannedTaskElement(
+                    "<?php echo $task['id']; ?>",
+                    "<?php echo addslashes($task['description']); ?>",
+                    <?php echo $task['duration']; ?>
+                );
                 hourSlot.appendChild(plannedTask);
             }
             <?php endwhile; ?>
