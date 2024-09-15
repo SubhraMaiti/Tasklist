@@ -46,31 +46,57 @@ $planned_tasks = $conn->query($sql);
     <title>Day Planner</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
+        body {
+            background-color: #f8f9fa;
+        }
         .task-list {
             min-height: 50px;
-            border: 1px solid #ddd;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
             padding: 10px;
+            background-color: #ffffff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         .task-item {
-            background-color: #f8f9fa;
-            border: 1px solid #ddd;
-            padding: 5px;
+            background-color: #e9ecef;
+            border: 1px solid #ced4da;
+            border-radius: 3px;
+            padding: 5px 10px;
             margin-bottom: 5px;
             cursor: move;
+            font-size: 0.9rem;
         }
         .timeline {
             display: flex;
             flex-direction: column;
+            background-color: #ffffff;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         .hour-slot {
             height: 60px;
-            border-bottom: 1px solid #ddd;
+            border-bottom: 1px solid #e9ecef;
             position: relative;
+            padding-left: 60px;
         }
         .hour-label {
             position: absolute;
-            left: -50px;
-            top: -10px;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+        .planned-task {
+            background-color: #007bff;
+            color: #ffffff;
+            border-radius: 3px;
+            padding: 2px 5px;
+            font-size: 0.8rem;
+            position: absolute;
+            left: 60px;
+            right: 5px;
         }
     </style>
 </head>
@@ -79,8 +105,8 @@ $planned_tasks = $conn->query($sql);
         <h1 class="mb-4">Day Planner</h1>
         
         <div class="row">
-            <div class="col-md-4">
-                <h2>Pending Tasks</h2>
+            <div class="col-md-3">
+                <h2 class="h4 mb-3">Pending Tasks</h2>
                 <div id="pending-tasks" class="task-list">
                     <?php while($task = $pending_tasks->fetch_assoc()): ?>
                         <div class="task-item" draggable="true" data-task-id="<?php echo $task['id']; ?>">
@@ -89,13 +115,14 @@ $planned_tasks = $conn->query($sql);
                     <?php endwhile; ?>
                 </div>
             </div>
-            <div class="col-md-8">
-                <h2>Day Timeline</h2>
+            <div class="col-md-9">
+                <h2 class="h4 mb-3">Day Timeline</h2>
                 <div id="day-timeline" class="timeline">
                     <?php
-                    for ($hour = 0; $hour < 24; $hour++) {
-                        echo "<div class='hour-slot' data-hour='" . sprintf("%02d:00", $hour) . "'>";
-                        echo "<span class='hour-label'>" . sprintf("%02d:00", $hour) . "</span>";
+                    for ($hour = 5; $hour <= 22; $hour++) {
+                        $hour_formatted = sprintf("%02d:00", $hour);
+                        echo "<div class='hour-slot' data-hour='" . $hour_formatted . "'>";
+                        echo "<span class='hour-label'>" . $hour_formatted . "</span>";
                         echo "</div>";
                     }
                     ?>
@@ -142,10 +169,12 @@ $planned_tasks = $conn->query($sql);
                     .then(response => response.text())
                     .then(data => {
                         // Move the task to the timeline
-                        hourSlot.appendChild(taskElement);
-                        taskElement.style.position = 'absolute';
-                        taskElement.style.top = '0';
-                        taskElement.style.width = '100%';
+                        const plannedTask = document.createElement('div');
+                        plannedTask.className = 'planned-task';
+                        plannedTask.textContent = taskElement.textContent;
+                        plannedTask.dataset.taskId = taskId;
+                        hourSlot.appendChild(plannedTask);
+                        taskElement.remove();
                     })
                     .catch((error) => {
                         console.error('Error:', error);
@@ -155,15 +184,13 @@ $planned_tasks = $conn->query($sql);
 
             // Initialize planned tasks
             <?php while($task = $planned_tasks->fetch_assoc()): ?>
-            const plannedTask = document.querySelector(`.task-item[data-task-id="<?php echo $task['id']; ?>"]`);
-            if (plannedTask) {
-                const hourSlot = document.querySelector(`.hour-slot[data-hour="<?php echo substr($task['planned_time'], 0, 5); ?>"]`);
-                if (hourSlot) {
-                    hourSlot.appendChild(plannedTask);
-                    plannedTask.style.position = 'absolute';
-                    plannedTask.style.top = '0';
-                    plannedTask.style.width = '100%';
-                }
+            const hourSlot = document.querySelector(`.hour-slot[data-hour="<?php echo substr($task['planned_time'], 0, 5); ?>"]`);
+            if (hourSlot) {
+                const plannedTask = document.createElement('div');
+                plannedTask.className = 'planned-task';
+                plannedTask.textContent = "<?php echo addslashes($task['description']); ?>";
+                plannedTask.dataset.taskId = "<?php echo $task['id']; ?>";
+                hourSlot.appendChild(plannedTask);
             }
             <?php endwhile; ?>
         });
