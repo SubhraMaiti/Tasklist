@@ -21,9 +21,16 @@ $sql = "CREATE TABLE IF NOT EXISTS project_parts (
     parent_id INT(6) UNSIGNED NULL,
     name VARCHAR(255) NOT NULL,
     level INT(6) NOT NULL,
-    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
-    FOREIGN KEY (parent_id) REFERENCES project_parts(id) ON DELETE CASCADE
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
 )";
+$conn->query($sql);
+
+// Add self-referencing foreign key for parent_id
+$sql = "ALTER TABLE project_parts
+    ADD CONSTRAINT fk_parent
+    FOREIGN KEY (parent_id) 
+    REFERENCES project_parts(id)
+    ON DELETE CASCADE";
 $conn->query($sql);
 
 // Handle form submissions
