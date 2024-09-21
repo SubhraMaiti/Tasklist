@@ -163,30 +163,6 @@ function fetchProjectParts($conn, $project_id, $parent_id = null, $level = 0) {
 
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Project Management</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        .project-tree ul {
-            list-style-type: none;
-            padding-left: 20px;
-        }
-        .project-tree li {
-            margin: 10px 0;
-        }
-        .add-part-form {
-            display: none;
-            margin-left: 20px;
-        }
-        .toggle-children {
-            cursor: pointer;
-        }
-    </style>
 </head>
 <body>
     <div class="container mt-4">
@@ -206,8 +182,9 @@ function fetchProjectParts($conn, $project_id, $parent_id = null, $level = 0) {
                 <h2>Projects</h2>
                 <ul class="list-group">
                     <?php while ($project = $projects_result->fetch_assoc()): ?>
-                        <li class="list-group-item">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
                             <a href="#" class="project-link" data-project-id="<?php echo $project['id']; ?>"><?php echo htmlspecialchars($project['name']); ?></a>
+                            <button class="btn btn-sm btn-danger delete-project" data-project-id="<?php echo $project['id']; ?>">Delete</button>
                         </li>
                     <?php endwhile; ?>
                 </ul>
@@ -239,7 +216,7 @@ function fetchProjectParts($conn, $project_id, $parent_id = null, $level = 0) {
                 });
             });
 
-            //handler for project deletion
+            // Add this new handler for project deletion
             $('.delete-project').click(function(e) {
                 e.preventDefault();
                 var projectId = $(this).data('project-id');
