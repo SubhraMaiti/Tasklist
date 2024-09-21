@@ -26,26 +26,24 @@ function fetchProjectParts($conn, $project_id, $parent_id = null, $level = 0) {
     return $parts;
 }
 
-function renderProjectTree($parts, $project_id, $level = 0) {
-    $html = '<ul' . ($level == 0 ? ' class="project-tree"' : '') . '>';
+function renderProjectTree($parts, $project_id) {
+    $html = '<ul>';
     foreach ($parts as $part) {
         $html .= '<li>';
-        $html .= '<i class="fas fa-chevron-' . (empty($part['children']) ? 'right' : 'down') . ' toggle-children"></i> ';
+        $html .= '<i class="fas fa-chevron-right toggle-children"></i> ';
         $html .= htmlspecialchars($part['name']);
-        $html .= ' <a href="#" class="delete-part" data-part-id="' . $part['id'] . '" data-project-id="' . $project_id . '"><i class="fas fa-trash"></i></a>';
-        $html .= ' <a href="#" class="add-to-tasklist" data-part-id="' . $part['id'] . '" data-project-id="' . $project_id . '"><i class="fas fa-plus"></i> Add to Tasklist</a>';
-        $html .= ' <a href="#" class="show-add-form"><i class="fas fa-plus-circle"></i> Add Sub-part</a>';
+        $html .= ' <a href="#" class="delete-part" data-part-id="' . $part['id'] . '" data-project-id="' . $project_id . '"><i class="fas fa-trash text-danger"></i></a>';
+        $html .= ' <a href="#" class="add-to-tasklist" data-part-id="' . $part['id'] . '" data-project-id="' . $project_id . '"><i class="fas fa-plus text-success"></i></a>';
+        $html .= ' <a href="#" class="show-add-form"><i class="fas fa-plus-circle text-primary"></i></a>';
         $html .= '<form class="add-part-form" method="post">';
         $html .= '<input type="hidden" name="project_id" value="' . $project_id . '">';
         $html .= '<input type="hidden" name="parent_id" value="' . $part['id'] . '">';
-        $html .= '<input type="hidden" name="level" value="' . ($level + 1) . '">';
-        $html .= '<div class="input-group input-group-sm">';
-        $html .= '<input type="text" name="new_part" class="form-control" placeholder="Enter sub-part name" required>';
-        $html .= '<button type="submit" class="btn btn-outline-secondary">Add</button>';
-        $html .= '</div>';
+        $html .= '<input type="hidden" name="level" value="' . ($part['level'] + 1) . '">';
+        $html .= '<input type="text" name="new_part" placeholder="New part name" required>';
+        $html .= '<button type="submit">Add</button>';
         $html .= '</form>';
         if (!empty($part['children'])) {
-            $html .= renderProjectTree($part['children'], $project_id, $level + 1);
+            $html .= renderProjectTree($part['children'], $project_id);
         }
         $html .= '</li>';
     }
@@ -64,29 +62,30 @@ if (isset($_GET['project_id'])) {
     $result = $stmt->get_result();
     $project = $result->fetch_assoc();
     $stmt->close();
-
+    
     if ($project) {
         echo '<h2>' . htmlspecialchars($project['name']) . '</h2>';
+        echo '<div class="project-tree">';
         
-        // Add new part form
-        echo '<form class="add-part-form mb-3" method="post">';
+        // Fetch and render project parts
+        $parts = fetchProjectParts($conn, $project_id);
+        echo renderProjectTree($parts, $project_id);
+        
+        // Add form for top-level parts
+        echo '<form class="add-part-form" method="post">';
         echo '<input type="hidden" name="project_id" value="' . $project_id . '">';
         echo '<input type="hidden" name="parent_id" value="">';
         echo '<input type="hidden" name="level" value="0">';
-        echo '<div class="input-group">';
-        echo '<input type="text" name="new_part" class="form-control" placeholder="Enter new part name" required>';
-        echo '<button type="submit" class="btn btn-outline-secondary">Add Part</button>';
-        echo '</div>';
+        echo '<input type="text" name="new_part" placeholder="New top-level part" required>';
+        echo '<button type="submit">Add</button>';
         echo '</form>';
-
-        // Render project tree
-        $parts = fetchProjectParts($conn, $project_id);
-        echo renderProjectTree($parts, $project_id);
+        
+        echo '</div>';
     } else {
-        echo '<p class="text-danger">Project not found.</p>';
+        echo '<p>Project not found.</p>';
     }
 } else {
-    echo '<p class="text-danger">No project ID provided.</p>';
+    echo '<p>No project selected.</p>';
 }
 
 $conn->close();
