@@ -180,7 +180,7 @@ function fetchProjectParts($conn, $project_id, $parent_id = null, $level = 0) {
         <h1 class="mb-4">Project Management</h1>
         
         <!-- Create new project form -->
-        <form method="post" action="" class="mb-4">
+        <form method="post" action="" class="mb-4" name="new-project-form">
             <div class="input-group">
                 <input type="text" name="new_project" class="form-control" placeholder="Enter new project name" required>
                 <button type="submit" class="btn btn-primary">Create Project</button>
@@ -210,62 +210,32 @@ function fetchProjectParts($conn, $project_id, $parent_id = null, $level = 0) {
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         $(document).ready(function() {
+            // Initial load of event handlers
+            initializeEventHandlers();
+
             // Load project details
-            $('.project-link').click(function(e) {
+            $(document).on('click', '.project-link', function(e) {
                 e.preventDefault();
                 var projectId = $(this).data('project-id');
                 loadProjectDetails(projectId);
             });
 
-            // Handle add part form submission
-            $(document).on('submit', '.add-part-form', function(e) {
+            // Handle new project form submission
+            $('form[name="new-project-form"]').submit(function(e) {
                 e.preventDefault();
                 var form = $(this);
                 $.post('', form.serialize(), function(response) {
-                    loadProjectDetails(form.find('[name="project_id"]').val());
+                    location.reload(); // Reload the page to show the new project
                 });
-            });
-
-            // Handle delete part
-            $(document).on('click', '.delete-part', function(e) {
-                e.preventDefault();
-                var partId = $(this).data('part-id');
-                var projectId = $(this).data('project-id');
-                if (confirm('Are you sure you want to delete this part?')) {
-                    $.get('?delete_part=' + partId, function() {
-                        loadProjectDetails(projectId);
-                    });
-                }
-            });
-
-            // Handle add to tasklist
-            $(document).on('click', '.add-to-tasklist', function(e) {
-                e.preventDefault();
-                var partId = $(this).data('part-id');
-                var projectId = $(this).data('project-id');
-                $.post('', { add_to_tasklist: true, part_id: partId }, function() {
-                    alert('Task added to the task list!');
-                    loadProjectDetails(projectId);
-                });
-            });
-
-            // Toggle children visibility
-            $(document).on('click', '.toggle-children', function() {
-                $(this).toggleClass('fa-chevron-right fa-chevron-down');
-                $(this).closest('li').children('ul').toggle();
-            });
-
-            // Show add sub-part form
-            $(document).on('click', '.add-subpart', function() {
-                $(this).closest('li').find('> .add-part-form').toggle();
             });
         });
 
         function loadProjectDetails(projectId) {
             $.get('get_project_details.php', { project_id: projectId }, function(response) {
                 $('#project-details').html(response);
-                // After loading project details, re-initialize event handlers
                 initializeEventHandlers();
+            }).fail(function(jqXHR, textStatus, errorThrown) {
+                console.error("Error loading project details:", textStatus, errorThrown);
             });
         }
 
@@ -310,6 +280,15 @@ function fetchProjectParts($conn, $project_id, $parent_id = null, $level = 0) {
                 $.post('', { add_to_tasklist: true, part_id: partId }, function() {
                     alert('Task added to the task list!');
                     loadProjectDetails(projectId);
+                });
+            });
+
+            // Add this new handler for the top-level "Add Part" form
+            $('.add-top-level-part-form').off('submit').on('submit', function(e) {
+                e.preventDefault();
+                var form = $(this);
+                $.post('', form.serialize(), function(response) {
+                    loadProjectDetails(form.find('[name="project_id"]').val());
                 });
             });
         }

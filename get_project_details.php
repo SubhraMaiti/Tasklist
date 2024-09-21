@@ -60,7 +60,7 @@ function renderProjectTree($parts, $project_id) {
     return $html;
   }
 
-if (isset($_GET['project_id'])) {
+  if (isset($_GET['project_id'])) {
     $project_id = $_GET['project_id'];
     
     // Fetch project details
@@ -81,7 +81,7 @@ if (isset($_GET['project_id'])) {
         echo renderProjectTree($parts, $project_id);
         
         // Add form for top-level parts
-        echo '<form class="add-part-form mt-3" method="post">';
+        echo '<form class="add-top-level-part-form mt-3" method="post">';
         echo '<input type="hidden" name="project_id" value="' . $project_id . '">';
         echo '<input type="hidden" name="parent_id" value="">';
         echo '<input type="hidden" name="level" value="0">';
