@@ -163,7 +163,7 @@ function fetchProjectParts($conn, $project_id, $parent_id = null, $level = 0) {
 
 ?>
 
-!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -258,7 +258,7 @@ function fetchProjectParts($conn, $project_id, $parent_id = null, $level = 0) {
                 console.error("Error loading project details:", textStatus, errorThrown);
             });
         }
-        
+
         function initializeEventHandlers() {
             $('.toggle-children').off('click').on('click', function() {
                 $(this).toggleClass('fa-chevron-right fa-chevron-down');
