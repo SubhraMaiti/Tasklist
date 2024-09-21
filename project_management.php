@@ -231,9 +231,11 @@ function fetchProjectParts($conn, $project_id, $parent_id = null, $level = 0) {
                 e.preventDefault();
                 var partId = $(this).data('part-id');
                 var projectId = $(this).data('project-id');
-                $.get('?delete_part=' + partId, function() {
-                    loadProjectDetails(projectId);
-                });
+                if (confirm('Are you sure you want to delete this part?')) {
+                    $.get('?delete_part=' + partId, function() {
+                        loadProjectDetails(projectId);
+                    });
+                }
             });
 
             // Handle add to tasklist
@@ -253,9 +255,9 @@ function fetchProjectParts($conn, $project_id, $parent_id = null, $level = 0) {
                 $(this).closest('li').children('ul').toggle();
             });
 
-            // Toggle add part form
-            $(document).on('click', '.show-add-form', function() {
-                $(this).siblings('.add-part-form').toggle();
+            // Show add sub-part form
+            $(document).on('click', '.add-subpart', function() {
+                $(this).closest('li').find('> .add-part-form').toggle();
             });
         });
 

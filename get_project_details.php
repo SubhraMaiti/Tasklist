@@ -27,21 +27,29 @@ function fetchProjectParts($conn, $project_id, $parent_id = null, $level = 0) {
 }
 
 function renderProjectTree($parts, $project_id) {
-    $html = '<ul>';
+    $html = '<ul class="list-group">';
     foreach ($parts as $part) {
-        $html .= '<li>';
-        $html .= '<i class="fas fa-chevron-right toggle-children"></i> ';
+        $html .= '<li class="list-group-item">';
+        if (!empty($part['children'])) {
+            $html .= '<i class="fas fa-chevron-right toggle-children mr-2"></i> ';
+        } else {
+            $html .= '<i class="fas fa-circle mr-2"></i> ';
+        }
         $html .= htmlspecialchars($part['name']);
-        $html .= ' <a href="#" class="delete-part" data-part-id="' . $part['id'] . '" data-project-id="' . $project_id . '"><i class="fas fa-trash text-danger"></i></a>';
-        $html .= ' <a href="#" class="add-to-tasklist" data-part-id="' . $part['id'] . '" data-project-id="' . $project_id . '"><i class="fas fa-plus text-success"></i></a>';
-        $html .= ' <a href="#" class="show-add-form"><i class="fas fa-plus-circle text-primary"></i></a>';
-        $html .= '<form class="add-part-form" method="post">';
+        $html .= ' <div class="float-right">';
+        $html .= '<button class="btn btn-sm btn-primary mr-1 add-subpart" data-part-id="' . $part['id'] . '" data-project-id="' . $project_id . '" data-level="' . ($part['level'] + 1) . '">Add Sub-part</button>';
+        $html .= '<button class="btn btn-sm btn-success mr-1 add-to-tasklist" data-part-id="' . $part['id'] . '" data-project-id="' . $project_id . '">Add to Tasklist</button>';
+        $html .= '<button class="btn btn-sm btn-danger delete-part" data-part-id="' . $part['id'] . '" data-project-id="' . $project_id . '">Delete</button>';
+        $html .= '</div>';
+        $html .= '<form class="add-part-form mt-2" style="display: none;" method="post">';
         $html .= '<input type="hidden" name="project_id" value="' . $project_id . '">';
         $html .= '<input type="hidden" name="parent_id" value="' . $part['id'] . '">';
         $html .= '<input type="hidden" name="level" value="' . ($part['level'] + 1) . '">';
-        $html .= '<input type="text" name="new_part" placeholder="New part name" required>';
-        $html .= '<button type="submit">Add</button>';
-        $html .= '</form>';
+        $html .= '<div class="input-group">';
+        $html .= '<input type="text" name="new_part" class="form-control" placeholder="New sub-part name" required>';
+        $html .= '<div class="input-group-append">';
+        $html .= '<button type="submit" class="btn btn-outline-secondary">Add</button>';
+        $html .= '</div></div></form>';
         if (!empty($part['children'])) {
             $html .= renderProjectTree($part['children'], $project_id);
         }
@@ -72,13 +80,15 @@ if (isset($_GET['project_id'])) {
         echo renderProjectTree($parts, $project_id);
         
         // Add form for top-level parts
-        echo '<form class="add-part-form" method="post">';
+        echo '<form class="add-part-form mt-3" method="post">';
         echo '<input type="hidden" name="project_id" value="' . $project_id . '">';
         echo '<input type="hidden" name="parent_id" value="">';
         echo '<input type="hidden" name="level" value="0">';
-        echo '<input type="text" name="new_part" placeholder="New top-level part" required>';
-        echo '<button type="submit">Add</button>';
-        echo '</form>';
+        echo '<div class="input-group">';
+        echo '<input type="text" name="new_part" class="form-control" placeholder="New top-level part" required>';
+        echo '<div class="input-group-append">';
+        echo '<button type="submit" class="btn btn-outline-primary">Add Top-Level Part</button>';
+        echo '</div></div></form>';
         
         echo '</div>';
     } else {
