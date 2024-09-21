@@ -123,6 +123,19 @@ if (isset($_GET['delete_part'])) {
     $stmt->close();
 }
 
+//handle project deletion
+if (isset($_GET['delete_project'])) {
+    $project_id = $_GET['delete_project'];
+    $sql = "DELETE FROM projects WHERE id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $project_id);
+    $stmt->execute();
+    $stmt->close();
+    // Redirect to refresh the page after deletion
+    header("Location: " . $_SERVER['PHP_SELF']);
+    exit();
+}
+
 // Fetch projects
 $sql = "SELECT * FROM projects ORDER BY created_at DESC";
 $projects_result = $conn->query($sql);
@@ -224,6 +237,15 @@ function fetchProjectParts($conn, $project_id, $parent_id = null, $level = 0) {
                 $.post('', form.serialize(), function(response) {
                     location.reload();
                 });
+            });
+
+            //handler for project deletion
+            $('.delete-project').click(function(e) {
+                e.preventDefault();
+                var projectId = $(this).data('project-id');
+                if (confirm('Are you sure you want to delete this project and all its parts?')) {
+                    window.location.href = '?delete_project=' + projectId;
+                }
             });
         });
 

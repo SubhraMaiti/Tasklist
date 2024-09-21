@@ -72,7 +72,10 @@ if (isset($_GET['project_id'])) {
     $stmt->close();
     
     if ($project) {
+        echo '<div class="d-flex justify-content-between align-items-center mb-3">';
         echo '<h2>' . htmlspecialchars($project['name']) . '</h2>';
+        echo '<button class="btn btn-danger delete-project" data-project-id="' . $project_id . '">Delete Project</button>';
+        echo '</div>';
         echo '<div class="project-tree">';
         
         // Fetch and render project parts
