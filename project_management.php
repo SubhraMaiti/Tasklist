@@ -13,7 +13,7 @@ $sql = "CREATE TABLE IF NOT EXISTS projects (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )";
 $conn->query($sql);
-
+//kk
 // Create project_parts table if not exists
 $sql = "CREATE TABLE IF NOT EXISTS project_parts (
     id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
