@@ -29,35 +29,36 @@ function fetchProjectParts($conn, $project_id, $parent_id = null, $level = 0) {
 function renderProjectTree($parts, $project_id) {
     $html = '<ul class="list-group">';
     foreach ($parts as $part) {
-        $html .= '<li class="list-group-item">';
-        if (!empty($part['children'])) {
-            $html .= '<i class="fas fa-chevron-right toggle-children mr-2"></i> ';
-        } else {
-            $html .= '<i class="fas fa-circle mr-2"></i> ';
-        }
-        $html .= htmlspecialchars($part['name']);
-        $html .= ' <div class="float-right">';
-        $html .= '<button class="btn btn-sm btn-primary mr-1 add-subpart" data-part-id="' . $part['id'] . '" data-project-id="' . $project_id . '" data-level="' . ($part['level'] + 1) . '">Add Sub-part</button>';
-        $html .= '<button class="btn btn-sm btn-success mr-1 add-to-tasklist" data-part-id="' . $part['id'] . '" data-project-id="' . $project_id . '">Add to Tasklist</button>';
-        $html .= '<button class="btn btn-sm btn-danger delete-part" data-part-id="' . $part['id'] . '" data-project-id="' . $project_id . '">Delete</button>';
-        $html .= '</div>';
-        $html .= '<form class="add-part-form mt-2" style="display: none;" method="post">';
-        $html .= '<input type="hidden" name="project_id" value="' . $project_id . '">';
-        $html .= '<input type="hidden" name="parent_id" value="' . $part['id'] . '">';
-        $html .= '<input type="hidden" name="level" value="' . ($part['level'] + 1) . '">';
-        $html .= '<div class="input-group">';
-        $html .= '<input type="text" name="new_part" class="form-control" placeholder="New sub-part name" required>';
-        $html .= '<div class="input-group-append">';
-        $html .= '<button type="submit" class="btn btn-outline-secondary">Add</button>';
-        $html .= '</div></div></form>';
-        if (!empty($part['children'])) {
-            $html .= renderProjectTree($part['children'], $project_id);
-        }
-        $html .= '</li>';
+      $html .= '<li class="list-group-item">';
+      if (!empty($part['children'])) {
+        $html .= '<i class="fas fa-chevron-right toggle-children mr-2"></i> ';
+      } else {
+        $html .= '<i class="fas fa-circle mr-2"></i> ';
+      }
+      $html .= htmlspecialchars($part['name']);
+      $html .= ' <div class="float-right">';
+      $html .= '<button class="btn btn-sm btn-primary mr-1 add-subpart" data-part-id="' . $part['id'] . '" data-project-id="' . $project_id . '">Add Sub-part</button>';
+      $html .= '<button class="btn btn-sm btn-success mr-1 add-to-tasklist" data-part-id="' . $part['id'] . '" data-project-id="' . $project_id . '">Add to Tasklist</button>';
+      $html .= '<button class="btn btn-sm btn-danger delete-part" data-part-id="' . $part['id'] . '" data-project-id="' . $project_id . '">Delete</button>';
+      $html .= '</div>';
+      $html .= '<form class="add-part-form mt-2" style="display: none;" method="post">';
+      $html .= '<input type="hidden" name="project_id" value="' . $project_id . '">';
+      $html .= '<input type="hidden" name="parent_id" value="' . $part['id'] . '">';
+      // Removed level setting for sub-parts
+      //$html .= '<input type="hidden" name="level" value="' . ($part['level'] + 1) . '">';
+      $html .= '<div class="input-group">';
+      $html .= '<input type="text" name="new_part" class="form-control" placeholder="New sub-part name" required>';
+      $html .= '<div class="input-group-append">';
+      $html .= '<button type="submit" class="btn btn-outline-secondary">Add</button>';
+      $html .= '</div></div></form>';
+      if (!empty($part['children'])) {
+        $html .= renderProjectTree($part['children'], $project_id);
+      }
+      $html .= '</li>';
     }
     $html .= '</ul>';
     return $html;
-}
+  }
 
 if (isset($_GET['project_id'])) {
     $project_id = $_GET['project_id'];
