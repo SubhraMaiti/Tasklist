@@ -210,22 +210,19 @@ function fetchProjectParts($conn, $project_id, $parent_id = null, $level = 0) {
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         $(document).ready(function() {
-            // Initial load of event handlers
             initializeEventHandlers();
 
-            // Load project details
             $(document).on('click', '.project-link', function(e) {
                 e.preventDefault();
                 var projectId = $(this).data('project-id');
                 loadProjectDetails(projectId);
             });
 
-            // Handle new project form submission
             $('form[name="new-project-form"]').submit(function(e) {
                 e.preventDefault();
                 var form = $(this);
                 $.post('', form.serialize(), function(response) {
-                    location.reload(); // Reload the page to show the new project
+                    location.reload();
                 });
             });
         });
@@ -240,19 +237,16 @@ function fetchProjectParts($conn, $project_id, $parent_id = null, $level = 0) {
         }
 
         function initializeEventHandlers() {
-            // Toggle children visibility
             $('.toggle-children').off('click').on('click', function() {
                 $(this).toggleClass('fa-chevron-right fa-chevron-down');
                 $(this).closest('li').children('ul').toggle();
             });
 
-            // Show add sub-part form
             $('.add-subpart').off('click').on('click', function() {
                 $(this).closest('li').find('> .add-part-form').toggle();
             });
 
-            // Handle add part form submission
-            $('.add-part-form').off('submit').on('submit', function(e) {
+            $('.add-part-form, .add-top-level-part-form').off('submit').on('submit', function(e) {
                 e.preventDefault();
                 var form = $(this);
                 $.post('', form.serialize(), function(response) {
@@ -260,19 +254,17 @@ function fetchProjectParts($conn, $project_id, $parent_id = null, $level = 0) {
                 });
             });
 
-            // Handle delete part
             $('.delete-part').off('click').on('click', function(e) {
                 e.preventDefault();
                 var partId = $(this).data('part-id');
                 var projectId = $(this).data('project-id');
-                if (confirm('Are you sure you want to delete this part?')) {
+                if (confirm('Are you sure you want to delete this part and all its sub-parts?')) {
                     $.get('?delete_part=' + partId, function() {
                         loadProjectDetails(projectId);
                     });
                 }
             });
 
-            // Handle add to tasklist
             $('.add-to-tasklist').off('click').on('click', function(e) {
                 e.preventDefault();
                 var partId = $(this).data('part-id');
@@ -280,15 +272,6 @@ function fetchProjectParts($conn, $project_id, $parent_id = null, $level = 0) {
                 $.post('', { add_to_tasklist: true, part_id: partId }, function() {
                     alert('Task added to the task list!');
                     loadProjectDetails(projectId);
-                });
-            });
-
-            // Add this new handler for the top-level "Add Part" form
-            $('.add-top-level-part-form').off('submit').on('submit', function(e) {
-                e.preventDefault();
-                var form = $(this);
-                $.post('', form.serialize(), function(response) {
-                    loadProjectDetails(form.find('[name="project_id"]').val());
                 });
             });
         }
