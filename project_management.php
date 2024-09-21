@@ -264,6 +264,53 @@ function fetchProjectParts($conn, $project_id, $parent_id = null, $level = 0) {
         function loadProjectDetails(projectId) {
             $.get('get_project_details.php', { project_id: projectId }, function(response) {
                 $('#project-details').html(response);
+                // After loading project details, re-initialize event handlers
+                initializeEventHandlers();
+            });
+        }
+
+        function initializeEventHandlers() {
+            // Toggle children visibility
+            $('.toggle-children').off('click').on('click', function() {
+                $(this).toggleClass('fa-chevron-right fa-chevron-down');
+                $(this).closest('li').children('ul').toggle();
+            });
+
+            // Show add sub-part form
+            $('.add-subpart').off('click').on('click', function() {
+                $(this).closest('li').find('> .add-part-form').toggle();
+            });
+
+            // Handle add part form submission
+            $('.add-part-form').off('submit').on('submit', function(e) {
+                e.preventDefault();
+                var form = $(this);
+                $.post('', form.serialize(), function(response) {
+                    loadProjectDetails(form.find('[name="project_id"]').val());
+                });
+            });
+
+            // Handle delete part
+            $('.delete-part').off('click').on('click', function(e) {
+                e.preventDefault();
+                var partId = $(this).data('part-id');
+                var projectId = $(this).data('project-id');
+                if (confirm('Are you sure you want to delete this part?')) {
+                    $.get('?delete_part=' + partId, function() {
+                        loadProjectDetails(projectId);
+                    });
+                }
+            });
+
+            // Handle add to tasklist
+            $('.add-to-tasklist').off('click').on('click', function(e) {
+                e.preventDefault();
+                var partId = $(this).data('part-id');
+                var projectId = $(this).data('project-id');
+                $.post('', { add_to_tasklist: true, part_id: partId }, function() {
+                    alert('Task added to the task list!');
+                    loadProjectDetails(projectId);
+                });
             });
         }
     </script>
