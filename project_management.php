@@ -6,32 +6,56 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Create projects table if not exists
-$sql = "CREATE TABLE IF NOT EXISTS projects (
-    id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-)";
-$conn->query($sql);
-//kk
-// Create project_parts table if not exists
-$sql = "CREATE TABLE IF NOT EXISTS project_parts (
-    id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    project_id INT(6) UNSIGNED,
-    parent_id INT(6) UNSIGNED NULL,
-    name VARCHAR(255) NOT NULL,
-    level INT(6) NOT NULL,
-    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
-)";
-$conn->query($sql);
+// Function to check if a table exists
+function tableExists($conn, $tableName) {
+    $result = $conn->query("SHOW TABLES LIKE '$tableName'");
+    return $result->num_rows > 0;
+}
 
-// Add self-referencing foreign key for parent_id
-$sql = "ALTER TABLE project_parts
-    ADD CONSTRAINT fk_parent
-    FOREIGN KEY (parent_id) 
-    REFERENCES project_parts(id)
-    ON DELETE CASCADE";
-$conn->query($sql);
+// Create projects table if not exists
+if (!tableExists($conn, 'projects')) {
+    $sql = "CREATE TABLE projects (
+        id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )";
+    if (!$conn->query($sql)) {
+        die("Error creating projects table: " . $conn->error);
+    }
+}
+
+// Create project_parts table if not exists
+if (!tableExists($conn, 'project_parts')) {
+    $sql = "CREATE TABLE project_parts (
+        id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        project_id INT(6) UNSIGNED,
+        parent_id INT(6) UNSIGNED NULL,
+        name VARCHAR(255) NOT NULL,
+        level INT(6) NOT NULL
+    )";
+    if (!$conn->query($sql)) {
+        die("Error creating project_parts table: " . $conn->error);
+    }
+
+    // Add foreign key constraints
+    $sql = "ALTER TABLE project_parts
+        ADD CONSTRAINT fk_project
+        FOREIGN KEY (project_id) 
+        REFERENCES projects(id)
+        ON DELETE CASCADE";
+    if (!$conn->query($sql)) {
+        die("Error adding fk_project constraint: " . $conn->error);
+    }
+
+    $sql = "ALTER TABLE project_parts
+        ADD CONSTRAINT fk_parent
+        FOREIGN KEY (parent_id) 
+        REFERENCES project_parts(id)
+        ON DELETE CASCADE";
+    if (!$conn->query($sql)) {
+        die("Error adding fk_parent constraint: " . $conn->error);
+    }
+}
 
 // Handle form submissions
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
