@@ -29,6 +29,7 @@ function fetchProjectParts($conn, $project_id, $parent_id = null, $level = 0) {
 function renderProjectTree($parts, $project_id) {
     $html = '<ul class="space-y-4">';
     foreach ($parts as $part) {
+        $fontSizeClass = $part['level'] == 0 ? 'text-lg' : ($part['level'] == 1 ? 'text-base' : 'text-sm');
         $html .= '<li class="bg-gray-50 p-4 rounded-lg shadow">';
         $html .= '<div class="flex items-center justify-between">';
         if (!empty($part['children'])) {
@@ -36,7 +37,7 @@ function renderProjectTree($parts, $project_id) {
         } else {
             $html .= '<i class="fas fa-circle mr-2 text-gray-500 text-xs"></i> ';
         }
-        $html .= '<span class="flex-grow font-medium">' . htmlspecialchars($part['name']) . '</span>';
+        $html .= '<span class="flex-grow font-medium ' . $fontSizeClass . '">' . htmlspecialchars($part['name']) . '</span>';
         $html .= '<div class="flex space-x-2">';
         $html .= '<button class="bg-blue-500 text-white px-2 py-1 rounded text-sm add-subpart" data-part-id="' . $part['id'] . '" data-project-id="' . $project_id . '" data-level="' . ($part['level'] + 1) . '"><i class="fas fa-plus mr-1"></i>Add Sub-part</button>';
         $html .= '<button class="bg-green-500 text-white px-2 py-1 rounded text-sm add-to-tasklist" data-part-id="' . $part['id'] . '" data-project-id="' . $project_id . '"><i class="fas fa-tasks mr-1"></i>Add to Tasklist</button>';

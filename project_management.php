@@ -184,6 +184,9 @@ function fetchProjectParts($conn, $project_id, $parent_id = null, $level = 0) {
         .toggle-children {
             cursor: pointer;
         }
+        .project-link {
+            font-weight: bold;
+        }
     </style>
 </head>
 <body class="bg-gray-100">
@@ -207,7 +210,7 @@ function fetchProjectParts($conn, $project_id, $parent_id = null, $level = 0) {
                     <ul class="space-y-2">
                         <?php while ($project = $projects_result->fetch_assoc()): ?>
                             <li class="flex justify-between items-center">
-                                <a href="#" class="project-link text-blue-500 hover:text-blue-700" data-project-id="<?php echo $project['id']; ?>"><?php echo htmlspecialchars($project['name']); ?></a>
+                                <a href="#" class="project-link text-blue-500 hover:text-blue-700 font-bold" data-project-id="<?php echo $project['id']; ?>"><?php echo htmlspecialchars($project['name']); ?></a>
                                 <button class="delete-project text-red-500 hover:text-red-700" data-project-id="<?php echo $project['id']; ?>">
                                     <i class="fas fa-trash-alt"></i>
                                 </button>
