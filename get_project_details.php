@@ -57,8 +57,13 @@ function renderProjectTree($parts, $project_id) {
         $html .= '<span class="flex-grow font-medium ' . $fontSizeClass . '">' . htmlspecialchars($part['name']) . '</span>';
         $html .= '<div class="flex space-x-2">';
         $html .= '<button class="bg-blue-500 text-white px-2 py-1 rounded text-sm add-subpart" data-part-id="' . $part['id'] . '" data-project-id="' . $project_id . '" data-level="' . ($part['level'] + 1) . '"><i class="fas fa-plus mr-1"></i>Add Sub-part</button>';
-        $html .= '<button class="bg-green-500 text-white px-2 py-1 rounded text-sm add-to-tasklist" data-part-id="' . $part['id'] . '" data-project-id="' . $project_id . '"><i class="fas fa-tasks mr-1"></i>Add to Tasklist</button>';
-        $html .= '<button class="bg-purple-500 text-white px-2 py-1 rounded text-sm schedule-task" data-part-id="' . $part['id'] . '" data-project-id="' . $project_id . '"><i class="fas fa-calendar-alt mr-1"></i>Schedule</button>';
+        
+        // Only show "Add to Tasklist" and "Schedule" buttons if the part has no children
+        if (empty($part['children'])) {
+            $html .= '<button class="bg-green-500 text-white px-2 py-1 rounded text-sm add-to-tasklist" data-part-id="' . $part['id'] . '" data-project-id="' . $project_id . '"><i class="fas fa-tasks mr-1"></i>Add to Tasklist</button>';
+            $html .= '<button class="bg-purple-500 text-white px-2 py-1 rounded text-sm schedule-task" data-part-id="' . $part['id'] . '" data-project-id="' . $project_id . '"><i class="fas fa-calendar-alt mr-1"></i>Schedule</button>';
+        }
+        
         $html .= '<button class="bg-red-500 text-white px-2 py-1 rounded text-sm delete-part" data-part-id="' . $part['id'] . '" data-project-id="' . $project_id . '"><i class="fas fa-trash-alt mr-1"></i>Delete</button>';
         $html .= '</div>';
         $html .= '</div>';
