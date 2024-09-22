@@ -30,7 +30,24 @@ function renderProjectTree($parts, $project_id) {
     $html = '<ul class="space-y-4">';
     foreach ($parts as $part) {
         $fontSizeClass = $part['level'] == 0 ? 'text-lg' : ($part['level'] == 1 ? 'text-base' : 'text-sm');
-        $html .= '<li class="bg-gray-50 p-4 rounded-lg shadow">';
+        
+        // Add different background colors based on the level
+        $bgColorClass = '';
+        switch ($part['level']) {
+            case 0:
+                $bgColorClass = 'bg-blue-100';
+                break;
+            case 1:
+                $bgColorClass = 'bg-green-100';
+                break;
+            case 2:
+                $bgColorClass = 'bg-yellow-100';
+                break;
+            default:
+                $bgColorClass = 'bg-gray-100';
+        }
+        
+        $html .= '<li class="' . $bgColorClass . ' p-4 rounded-lg shadow">';
         $html .= '<div class="flex items-center justify-between">';
         if (!empty($part['children'])) {
             $html .= '<i class="fas fa-chevron-right toggle-children mr-2 text-gray-500"></i> ';
