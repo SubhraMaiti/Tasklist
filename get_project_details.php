@@ -119,35 +119,6 @@ if (isset($_GET['project_id'])) {
     echo '<p class="text-gray-500">No project selected.</p>';
 }
 
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['action'] == 'schedule_task') {
-    $part_id = $_POST['part_id'];
-    $project_id = $_POST['project_id'];
-    $specific_date = $_POST['specific_date'];
-
-    // Fetch the task description
-    $sql = "SELECT name FROM project_parts WHERE id = ?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("i", $part_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $task = $result->fetch_assoc();
-    $stmt->close();
-
-    if ($task) {
-        // Insert into periodic_tasks table
-        $sql = "INSERT INTO periodic_tasks (description, frequency, specific_date, project_id, part_id) VALUES (?, 'specific_date', ?, ?, ?)";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("ssii", $task['name'], $specific_date, $project_id, $part_id);
-        $stmt->execute();
-        $stmt->close();
-
-        echo json_encode(['success' => true]);
-    } else {
-        echo json_encode(['success' => false, 'error' => 'Task not found']);
-    }
-    exit;
-}
-
 $conn->close();
 ?>
 
