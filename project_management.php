@@ -177,9 +177,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
     if ($task) {
         // Insert into periodic_tasks table
-        $sql = "INSERT INTO periodic_tasks (description, frequency, specific_date, project_id, part_id) VALUES (?, 'specific_date', ?, ?, ?)";
+        $sql = "INSERT INTO periodic_tasks (description, tag_id, frequency, specific_date, day_of_week, day_of_month) VALUES (?, ?, ?, ?, ?, ?)";
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("ssii", $task['name'], $specific_date, $project_id, $part_id);
+        $stmt->bind_param("sissii", $task['name'], 2, 'specific_date', $specific_date, null, null);
         $stmt->execute();
         $stmt->close();
 
