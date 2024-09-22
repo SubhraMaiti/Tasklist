@@ -186,30 +186,41 @@ $conn->close();
 
 <script>
 document.addEventListener('DOMContentLoaded', (event) => {
+    console.log('DOM fully loaded and parsed');
+
     const modal = document.getElementById('scheduleModal');
     const scheduleButtons = document.querySelectorAll('.schedule-task');
     const cancelButton = document.getElementById('scheduleCancel');
     const submitButton = document.getElementById('scheduleSubmit');
     const scheduleForm = document.getElementById('scheduleForm');
 
+    console.log('Found schedule buttons:', scheduleButtons.length);
+
     scheduleButtons.forEach(button => {
-        button.addEventListener('click', () => {
+        button.addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log('Schedule button clicked');
             const partId = button.dataset.partId;
             const projectId = button.dataset.projectId;
+            console.log('Part ID:', partId, 'Project ID:', projectId);
             document.getElementById('schedulePart').value = partId;
             document.getElementById('scheduleProject').value = projectId;
             modal.classList.remove('hidden');
+            console.log('Modal should now be visible');
         });
     });
 
     cancelButton.addEventListener('click', () => {
+        console.log('Cancel button clicked');
         modal.classList.add('hidden');
     });
 
-    submitButton.addEventListener('click', () => {
+    submitButton.addEventListener('click', (e) => {
+        e.preventDefault();
+        console.log('Submit button clicked');
         if (scheduleForm.checkValidity()) {
             const formData = new FormData(scheduleForm);
-            fetch('', {
+            fetch(window.location.href, {
                 method: 'POST',
                 body: formData
             })
