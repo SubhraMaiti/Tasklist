@@ -175,9 +175,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
     $task = $result->fetch_assoc();
     $stmt->close();
 
+    // Fetch the project name
+    $sql = "SELECT name FROM projects WHERE id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $project_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $project = $result->fetch_assoc();
+    $stmt->close();
+
     if ($task) {
         // Insert into periodic_tasks table
         $frequency = 'specific_date';
+        $task['name'] = $task['name'] . " (Project: " . $project['name']. ")";
         $tag_id = 2; // Assuming the tag_id for "Personal Project" is 2
         $sql = "INSERT INTO periodic_tasks (description, tag_id, frequency, specific_date, day_of_week, day_of_month) VALUES (?, ?, ?, ?, null, null)";
         $stmt = $conn->prepare($sql);
