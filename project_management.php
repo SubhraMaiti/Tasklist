@@ -301,60 +301,99 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 loadProjectDetails(projectId);
             });
 
-            $('form[name="new-project-form"]').submit(function(e) {
-                e.preventDefault();
-                var form = $(this);
-                $.post('', form.serialize(), function(response) {
-                    location.reload();
-                });
-            });
-
-            $('.delete-project').click(function(e) {
-                e.preventDefault();
-                var projectId = $(this).data('project-id');
-                if (confirm('Are you sure you want to delete this project and all its parts?')) {
-                    window.location.href = '?delete_project=' + projectId;
-                }
+        $('form[name="new-project-form"]').submit(function(e) {
+            e.preventDefault();
+            var form = $(this);
+            $.post('', form.serialize(), function(response) {
+                location.reload();
             });
         });
 
-        function loadProjectDetails(projectId) {
-            $.get('get_project_details.php', { project_id: projectId }, function(response) {
-                $('#project-details').html(response);
-                initializeEventHandlers();
-            }).fail(function(jqXHR, textStatus, errorThrown) {
-                console.error("Error loading project details:", textStatus, errorThrown);
+        $('.delete-project').click(function(e) {
+            e.preventDefault();
+            var projectId = $(this).data('project-id');
+            if (confirm('Are you sure you want to delete this project and all its parts?')) {
+                window.location.href = '?delete_project=' + projectId;
+            }
+        });
+
+        // Event delegation for schedule task buttons
+        $(document).on('click', '.schedule-task', function() {
+            const partId = $(this).data('part-id');
+            const projectId = $(this).data('project-id');
+            $('#schedulePart').val(partId);
+            $('#scheduleProject').val(projectId);
+            $('#scheduleModal').removeClass('hidden');
+        });
+
+        $('#scheduleCancel').click(function() {
+            $('#scheduleModal').addClass('hidden');
+        });
+
+        $('#scheduleSubmit').click(function() {
+            if ($('#scheduleForm')[0].checkValidity()) {
+                $.ajax({
+                    url: '',
+                    method: 'POST',
+                    data: $('#scheduleForm').serialize(),
+                    dataType: 'json',
+                    success: function(data) {
+                        if (data.success) {
+                            alert('Task scheduled successfully!');
+                            $('#scheduleModal').addClass('hidden');
+                            loadProjectDetails($('#scheduleProject').val());
+                        } else {
+                            alert('Error scheduling task: ' + data.error);
+                        }
+                    },
+                    error: function(jqXHR, textStatus, errorThrown) {
+                        console.error('Error:', errorThrown);
+                        alert('An error occurred while scheduling the task.');
+                    }
+                });
+            } else {
+                alert('Please fill out all required fields.');
+            }
+        });
+    });
+
+    function loadProjectDetails(projectId) {
+        $.get('get_project_details.php', { project_id: projectId }, function(response) {
+            $('#project-details').html(response);
+            initializeEventHandlers();
+        }).fail(function(jqXHR, textStatus, errorThrown) {
+            console.error("Error loading project details:", textStatus, errorThrown);
+        });
+    }
+
+    function initializeEventHandlers() {
+        $('.toggle-children').off('click').on('click', function() {
+            $(this).toggleClass('fa-chevron-right fa-chevron-down');
+            $(this).closest('li').children('ul').toggle();
+        });
+
+        $('.add-subpart').off('click').on('click', function() {
+            $(this).closest('li').find('> .add-part-form').toggle();
+        });
+
+        $('.add-part-form, .add-top-level-part-form').off('submit').on('submit', function(e) {
+            e.preventDefault();
+            var form = $(this);
+            $.post('', form.serialize(), function(response) {
+                loadProjectDetails(form.find('[name="project_id"]').val());
+            });
+        });
+
+    $('.delete-part').off('click').on('click', function(e) {
+        e.preventDefault();
+        var partId = $(this).data('part-id');
+        var projectId = $(this).data('project-id');
+        if (confirm('Are you sure you want to delete this part and all its sub-parts?')) {
+            $.get('?delete_part=' + partId, function() {
+                loadProjectDetails(projectId);
             });
         }
-
-        function initializeEventHandlers() {
-            $('.toggle-children').off('click').on('click', function() {
-                $(this).toggleClass('fa-chevron-right fa-chevron-down');
-                $(this).closest('li').children('ul').toggle();
-            });
-
-            $('.add-subpart').off('click').on('click', function() {
-                $(this).closest('li').find('> .add-part-form').toggle();
-            });
-
-            $('.add-part-form, .add-top-level-part-form').off('submit').on('submit', function(e) {
-                e.preventDefault();
-                var form = $(this);
-                $.post('', form.serialize(), function(response) {
-                    loadProjectDetails(form.find('[name="project_id"]').val());
-                });
-            });
-
-            $('.delete-part').off('click').on('click', function(e) {
-                e.preventDefault();
-                var partId = $(this).data('part-id');
-                var projectId = $(this).data('project-id');
-                if (confirm('Are you sure you want to delete this part and all its sub-parts?')) {
-                    $.get('?delete_part=' + partId, function() {
-                        loadProjectDetails(projectId);
-                    });
-                }
-            });
+    });
 
             $('.add-to-tasklist').off('click').on('click', function(e) {
                 e.preventDefault();
@@ -366,53 +405,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 });
             });
         }
-
-        document.addEventListener('DOMContentLoaded', (event) => {
-        const modal = document.getElementById('scheduleModal');
-        const scheduleButtons = document.querySelectorAll('.schedule-task');
-        const cancelButton = document.getElementById('scheduleCancel');
-        const submitButton = document.getElementById('scheduleSubmit');
-        const scheduleForm = document.getElementById('scheduleForm');
-
-        scheduleButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const partId = button.dataset.partId;
-                const projectId = button.dataset.projectId;
-                document.getElementById('schedulePart').value = partId;
-                document.getElementById('scheduleProject').value = projectId;
-                modal.classList.remove('hidden');
-            });
-        });
-
-        cancelButton.addEventListener('click', () => {
-            modal.classList.add('hidden');
-        });
-
-        submitButton.addEventListener('click', () => {
-            if (scheduleForm.checkValidity()) {
-                const formData = new FormData(scheduleForm);
-                fetch('', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('Task scheduled successfully!');
-                        modal.classList.add('hidden');
-                    } else {
-                        alert('Error scheduling task: ' + data.error);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('An error occurred while scheduling the task.');
-                });
-                } else {
-                    alert('Please fill out all required fields.');
-                }
-            });
-        });
     </script>
 </body>
 </html>
