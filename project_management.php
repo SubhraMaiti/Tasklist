@@ -169,58 +169,62 @@ function fetchProjectParts($conn, $project_id, $parent_id = null, $level = 0) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Project Management</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         .project-tree ul {
             list-style-type: none;
-            padding-left: 20px;
         }
         .project-tree li {
             margin: 10px 0;
         }
         .add-part-form {
             display: none;
-            margin-left: 20px;
         }
         .toggle-children {
             cursor: pointer;
         }
     </style>
 </head>
-<body>
-    <div class="container mt-4">
-        <h1 class="mb-4">Project Management</h1>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold mb-8">Project Management</h1>
         
         <!-- Create new project form -->
-        <form method="post" action="" class="mb-4" name="new-project-form">
-            <div class="input-group">
-                <input type="text" name="new_project" class="form-control" placeholder="Enter new project name" required>
-                <button type="submit" class="btn btn-primary">Create Project</button>
-            </div>
-        </form>
+        <div class="bg-white shadow-md rounded-lg p-6 mb-8">
+            <h2 class="text-xl font-semibold mb-4">Create New Project</h2>
+            <form method="post" action="" class="flex" name="new-project-form">
+                <input type="text" name="new_project" class="flex-grow mr-2 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter new project name" required>
+                <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">Create Project</button>
+            </form>
+        </div>
         
-        <!-- Project list -->
-        <div class="row">
-            <div class="col-md-4">
-                <h2>Projects</h2>
-                <ul class="list-group">
-                    <?php while ($project = $projects_result->fetch_assoc()): ?>
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <a href="#" class="project-link" data-project-id="<?php echo $project['id']; ?>"><?php echo htmlspecialchars($project['name']); ?></a>
-                            <button class="btn btn-sm btn-danger delete-project" data-project-id="<?php echo $project['id']; ?>">Delete</button>
-                        </li>
-                    <?php endwhile; ?>
-                </ul>
+        <!-- Project list and details -->
+        <div class="flex flex-col md:flex-row space-y-8 md:space-y-0 md:space-x-8">
+            <div class="w-full md:w-1/3">
+                <div class="bg-white shadow-md rounded-lg p-6">
+                    <h2 class="text-xl font-semibold mb-4">Projects</h2>
+                    <ul class="space-y-2">
+                        <?php while ($project = $projects_result->fetch_assoc()): ?>
+                            <li class="flex justify-between items-center">
+                                <a href="#" class="project-link text-blue-500 hover:text-blue-700" data-project-id="<?php echo $project['id']; ?>"><?php echo htmlspecialchars($project['name']); ?></a>
+                                <button class="delete-project text-red-500 hover:text-red-700" data-project-id="<?php echo $project['id']; ?>">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </li>
+                        <?php endwhile; ?>
+                    </ul>
+                </div>
             </div>
             
-            <div class="col-md-8">
-                <div id="project-details"></div>
+            <div class="w-full md:w-2/3">
+                <div class="bg-white shadow-md rounded-lg p-6">
+                    <div id="project-details"></div>
+                </div>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         $(document).ready(function() {
@@ -240,7 +244,6 @@ function fetchProjectParts($conn, $project_id, $parent_id = null, $level = 0) {
                 });
             });
 
-            // Add this new handler for project deletion
             $('.delete-project').click(function(e) {
                 e.preventDefault();
                 var projectId = $(this).data('project-id');
