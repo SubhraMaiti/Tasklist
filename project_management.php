@@ -252,21 +252,26 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                         <?php while ($project = $projects_result->fetch_assoc()): ?>
                             <li class="flex justify-between items-center">
                                 <a href="#" class="project-link text-blue-500 hover:text-blue-700 font-bold" data-project-id="<?php echo $project['id']; ?>"><?php echo htmlspecialchars($project['name']); ?></a>
-                                <button class="delete-project text-red-500 hover:text-red-700" data-project-id="<?php echo $project['id']; ?>">
-                                    <i class="fas fa-trash-alt"></i>
-                                </button>
+                                <div>
+                                    <button class="open-in-new-tab text-green-500 hover:text-green-700 mr-2" data-project-id="<?php echo $project['id']; ?>" title="Open in new tab">
+                                        <i class="fas fa-external-link-alt"></i>
+                                    </button>
+                                    <button class="delete-project text-red-500 hover:text-red-700" data-project-id="<?php echo $project['id']; ?>" title="Delete project">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
                             </li>
                         <?php endwhile; ?>
                     </ul>
-                </div>
             </div>
-            
-            <div class="w-full md:w-2/3">
-                <div class="bg-white shadow-md rounded-lg p-6">
-                    <div id="project-details"></div>
-                </div>
-            </div>
+    </div>
+    
+    <div class="w-full md:w-2/3">
+        <div class="bg-white shadow-md rounded-lg p-6">
+            <div id="project-details"></div>
         </div>
+    </div>
+</div>
     </div>
 
     <div id="scheduleModal" class="fixed z-10 inset-0 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
@@ -311,6 +316,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                 e.preventDefault();
                 var projectId = $(this).data('project-id');
                 loadProjectDetails(projectId);
+            });
+
+            $(document).on('click', '.open-in-new-tab', function(e) {
+                e.preventDefault();
+                var projectId = $(this).data('project-id');
+                var newTabUrl = 'project_details.php?project_id=' + projectId;
+                window.open(newTabUrl, '_blank');
             });
 
         $('form[name="new-project-form"]').submit(function(e) {
