@@ -11,8 +11,15 @@ header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
 $method = $_SERVER['REQUEST_METHOD'];
-$request = explode('/', trim($_SERVER['PATH_INFO'],'/'));
+$request_uri = $_SERVER['REQUEST_URI'];
+$base_path = '/Projects/List/v2/api/';
+$request = substr($request_uri, strlen($base_path));
+
+$request = explode('/', $request);
+
+
 $input = json_decode(file_get_contents('php://input'), true);
+
 
 $resource = $request[0] ?? null;
 $id = $request[1] ?? null;
