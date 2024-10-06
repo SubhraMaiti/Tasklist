@@ -5,66 +5,87 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Task Manager</title>
     <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2ecc71;
+            --background-color: #ecf0f1;
+            --text-color: #34495e;
+        }
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
             margin: 0;
             padding: 20px;
-            background-color: #f4f4f4;
+            background-color: var(--background-color);
+            color: var(--text-color);
         }
         .container {
             max-width: 800px;
             margin: auto;
             background: white;
             padding: 20px;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
         h1 {
-            color: #333;
-        }
-        form {
+            color: var(--primary-color);
+            text-align: center;
             margin-bottom: 20px;
         }
-        input[type="text"], select {
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        form, #filterControls {
+            display: grid;
+            gap: 10px;
+        }
+        input[type="text"], input[type="date"], select, button {
             width: 100%;
-            padding: 8px;
-            margin-bottom: 10px;
+            padding: 10px;
             border: 1px solid #ddd;
             border-radius: 4px;
+            font-size: 14px;
         }
         button {
-            background-color: #4CAF50;
+            background-color: var(--primary-color);
             color: white;
-            padding: 10px 15px;
             border: none;
-            border-radius: 4px;
             cursor: pointer;
+            transition: background-color 0.3s;
         }
         button:hover {
-            background-color: #45a049;
+            background-color: #2980b9;
         }
         table {
             width: 100%;
             border-collapse: collapse;
+            margin-top: 20px;
         }
         th, td {
             text-align: left;
-            padding: 8px;
+            padding: 12px;
             border-bottom: 1px solid #ddd;
         }
         th {
-            background-color: #f2f2f2;
+            background-color: var(--primary-color);
+            color: white;
         }
         .completed {
             text-decoration: line-through;
-            color: #888;
+            color: #7f8c8d;
         }
         .task-actions button {
+            padding: 5px 10px;
             margin-right: 5px;
+            font-size: 12px;
         }
-        #filterControls {
-            margin-bottom: 20px;
+        .task-actions button:last-child {
+            background-color: #e74c3c;
+        }
+        .task-actions button:last-child:hover {
+            background-color: #c0392b;
         }
     </style>
 </head>
@@ -72,23 +93,23 @@
     <div class="container">
         <h1>Task Manager</h1>
         
-        <form id="taskForm">
-            <input type="text" id="taskDescription" placeholder="Enter task description" required>
-            <select id="taskTag">
-                <option value="">Select a tag</option>
-                <!-- Tags will be populated here -->
-            </select>
-            <button type="submit">Add Task</button>
-        </form>
+        <div class="grid">
+            <form id="taskForm">
+                <input type="text" id="taskDescription" placeholder="Enter task description" required>
+                <select id="taskTag">
+                    <option value="">Select a tag</option>
+                </select>
+                <button type="submit">Add Task</button>
+            </form>
 
-        <div id="filterControls">
-            <select id="tagFilter">
-                <option value="">All Tags</option>
-                <!-- Tags will be populated here -->
-            </select>
-            <input type="date" id="dateFilter">
-            <button id="applyFilters">Apply Filters</button>
-            <button id="clearFilters">Clear Filters</button>
+            <div id="filterControls">
+                <select id="tagFilter">
+                    <option value="">All Tags</option>
+                </select>
+                <input type="date" id="dateFilter">
+                <button id="applyFilters">Apply Filters</button>
+                <button id="clearFilters">Clear Filters</button>
+            </div>
         </div>
 
         <table id="taskList">
@@ -101,7 +122,6 @@
                 </tr>
             </thead>
             <tbody>
-                <!-- Tasks will be populated here -->
             </tbody>
         </table>
     </div>
