@@ -99,6 +99,23 @@ if ($show_completed === 'false') {
     $sql .= " AND tasks.completed = FALSE";
 }
 
+// Fetch the ID of the "expense" tag
+$fetch_tag_id_sql = "SELECT id FROM tags WHERE name = 'Expense'";
+$result = $conn->query($fetch_tag_id_sql);
+if ($result->num_rows > 0) {
+    $row = $result->fetch_assoc();
+    $expense_tag_id = $row['id'];
+} else {
+    // If "expense" tag doesn't exist, create it
+    $fetch_tag_id_sql = "INSERT INTO tags (name) VALUES ('Expense')";
+    $conn->query($fetch_tag_id_sql);
+    $expense_tag_id = $conn->insert_id;
+}
+
+//don't fecth tasks with tag name expense
+$sql .= " AND tag_id != ". $expense_tag_id;
+
+
 $sql .= " ORDER BY " . $sort_by . " " . $sort_order;
 
 $stmt = $conn->prepare($sql);
