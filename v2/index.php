@@ -34,12 +34,18 @@
         }
         .grid {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 20px;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 5px;
         }
         form, #filterControls {
             display: grid;
             gap: 10px;
+        }
+        #taskDescription{
+            grid-column: span 2;
+        }
+        #taskTag{
+            grid-column: span 1;
         }
         input[type="text"], input[type="date"], select, button {
             width: 100%;
@@ -93,24 +99,23 @@
     <div class="container">
         <h1>Task Manager</h1>
         
-        <div class="grid">
-            <form id="taskForm">
-                <input type="text" id="taskDescription" placeholder="Enter task description" required>
-                <select id="taskTag">
-                    <option value="">Select a tag</option>
-                </select>
-                <button type="submit">Add Task</button>
-            </form>
+        <form id="taskForm" class="grid">
+            <input type="text" id="taskDescription" placeholder="Enter task description" required>
+            <select id="taskTag">
+                <option value="">Select a tag</option>
+            </select>
+            <button type="submit">Add Task</button>
+        </form>
 
-            <div id="filterControls">
-                <select id="tagFilter">
-                    <option value="">All Tags</option>
-                </select>
-                <input type="date" id="dateFilter">
-                <button id="applyFilters">Apply Filters</button>
-                <button id="clearFilters">Clear Filters</button>
-            </div>
+        <div id="filterControls">
+            <select id="tagFilter">
+                <option value="">All Tags</option>
+            </select>
+            <input type="date" id="dateFilter">
+            <button id="applyFilters">Apply Filters</button>
+            <button id="clearFilters">Clear Filters</button>
         </div>
+        
 
         <table id="taskList">
             <thead>
