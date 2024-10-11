@@ -39,28 +39,28 @@ if (!tableExists($conn, 'notes')) {
     }
 }
 
-// Create tags table if not exists
-if (!tableExists($conn, 'tags')) {
-    $sql = "CREATE TABLE tags (
+// Create book_tags table if not exists
+if (!tableExists($conn, 'book_tags')) {
+    $sql = "CREATE TABLE book_tags (
         id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         name VARCHAR(255) NOT NULL UNIQUE
     )";
     if (!$conn->query($sql)) {
-        die("Error creating tags table: " . $conn->error);
+        die("Error creating book_tags table: " . $conn->error);
     }
 }
 
-// Create note_tags table if not exists
-if (!tableExists($conn, 'note_tags')) {
-    $sql = "CREATE TABLE note_tags (
+// Create note_book_tags table if not exists
+if (!tableExists($conn, 'note_book_tags')) {
+    $sql = "CREATE TABLE note_book_tags (
         note_id INT(6) UNSIGNED,
-        tag_id INT(6) UNSIGNED,
-        PRIMARY KEY (note_id, tag_id),
+        book_tag_id INT(6) UNSIGNED,
+        PRIMARY KEY (note_id, book_tag_id),
         FOREIGN KEY (note_id) REFERENCES notes(id) ON DELETE CASCADE,
-        FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
+        FOREIGN KEY (book_tag_id) REFERENCES book_tags(id) ON DELETE CASCADE
     )";
     if (!$conn->query($sql)) {
-        die("Error creating note_tags table: " . $conn->error);
+        die("Error creating note_book_tags table: " . $conn->error);
     }
 }
 
@@ -81,7 +81,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             case 'add_note':
                 $book_id = $_POST['book_id'];
                 $content = $_POST['content'];
-                $tags = isset($_POST['tags']) ? $_POST['tags'] : [];
+                $book_tags = isset($_POST['book_tags']) ? $_POST['book_tags'] : [];
 
                 // Insert note
                 $sql = "INSERT INTO notes (book_id, content) VALUES (?, ?)";
@@ -91,18 +91,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $note_id = $stmt->insert_id;
                 $stmt->close();
 
-                // Process tags
-                foreach ($tags as $tag) {
-                    // Check if tag exists, if not create it
-                    $sql = "INSERT IGNORE INTO tags (name) VALUES (?)";
+                // Process book tags
+                foreach ($book_tags as $tag) {
+                    // Check if book tag exists, if not create it
+                    $sql = "INSERT IGNORE INTO book_tags (name) VALUES (?)";
                     $stmt = $conn->prepare($sql);
                     $stmt->bind_param("s", $tag);
                     $stmt->execute();
-                    $tag_id = $stmt->insert_id ?: $conn->query("SELECT id FROM tags WHERE name = '$tag'")->fetch_assoc()['id'];
+                    $tag_id = $stmt->insert_id ?: $conn->query("SELECT id FROM book_tags WHERE name = '$tag'")->fetch_assoc()['id'];
                     $stmt->close();
 
-                    // Link tag to note
-                    $sql = "INSERT INTO note_tags (note_id, tag_id) VALUES (?, ?)";
+                    // Link book tag to note
+                    $sql = "INSERT INTO note_book_tags (note_id, book_tag_id) VALUES (?, ?)";
                     $stmt = $conn->prepare($sql);
                     $stmt->bind_param("ii", $note_id, $tag_id);
                     $stmt->execute();
@@ -116,28 +116,28 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 // Fetch books
 $books_result = $conn->query("SELECT * FROM books ORDER BY title");
 
-// Fetch tags
-$tags_result = $conn->query("SELECT * FROM tags ORDER BY name");
+// Fetch book tags
+$book_tags_result = $conn->query("SELECT * FROM book_tags ORDER BY name");
 
-// Fetch notes with books and tags
+// Fetch notes with books and book tags
 $filter_book = isset($_GET['filter_book']) ? $_GET['filter_book'] : '';
-$filter_tags = isset($_GET['filter_tags']) ? $_GET['filter_tags'] : [];
+$filter_book_tags = isset($_GET['filter_book_tags']) ? $_GET['filter_book_tags'] : [];
 
 $notes_query = "SELECT n.id, n.content, n.created_at, b.title AS book_title, b.author AS book_author, 
-                GROUP_CONCAT(t.name) AS tags
+                GROUP_CONCAT(bt.name) AS book_tags
                 FROM notes n
                 JOIN books b ON n.book_id = b.id
-                LEFT JOIN note_tags nt ON n.id = nt.note_id
-                LEFT JOIN tags t ON nt.tag_id = t.id";
+                LEFT JOIN note_book_tags nbt ON n.id = nbt.note_id
+                LEFT JOIN book_tags bt ON nbt.book_tag_id = bt.id";
 
-if ($filter_book || !empty($filter_tags)) {
+if ($filter_book || !empty($filter_book_tags)) {
     $notes_query .= " WHERE 1=1";
     if ($filter_book) {
         $notes_query .= " AND b.id = $filter_book";
     }
-    if (!empty($filter_tags)) {
-        $tag_ids = implode(',', array_map('intval', $filter_tags));
-        $notes_query .= " AND n.id IN (SELECT note_id FROM note_tags WHERE tag_id IN ($tag_ids))";
+    if (!empty($filter_book_tags)) {
+        $tag_ids = implode(',', array_map('intval', $filter_book_tags));
+        $notes_query .= " AND n.id IN (SELECT note_id FROM note_book_tags WHERE book_tag_id IN ($tag_ids))";
     }
 }
 
@@ -195,11 +195,11 @@ $notes_result = $conn->query($notes_query);
                     <textarea id="content" name="content" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" rows="4"></textarea>
                 </div>
                 <div>
-                    <label for="tags" class="block text-sm font-medium text-gray-700">Tags</label>
-                    <select id="tags" name="tags[]" multiple class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                    <label for="book_tags" class="block text-sm font-medium text-gray-700">Book Tags</label>
+                    <select id="book_tags" name="book_tags[]" multiple class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                         <?php 
-                        $tags_result->data_seek(0);
-                        while ($tag = $tags_result->fetch_assoc()): 
+                        $book_tags_result->data_seek(0);
+                        while ($tag = $book_tags_result->fetch_assoc()): 
                         ?>
                             <option value="<?php echo htmlspecialchars($tag['name']); ?>"><?php echo htmlspecialchars($tag['name']); ?></option>
                         <?php endwhile; ?>
@@ -226,13 +226,13 @@ $notes_result = $conn->query($notes_query);
                     </select>
                 </div>
                 <div>
-                    <label for="filter_tags" class="block text-sm font-medium text-gray-700">Filter by Tags</label>
-                    <select id="filter_tags" name="filter_tags[]" multiple class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                    <label for="filter_book_tags" class="block text-sm font-medium text-gray-700">Filter by Book Tags</label>
+                    <select id="filter_book_tags" name="filter_book_tags[]" multiple class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                         <?php 
-                        $tags_result->data_seek(0);
-                        while ($tag = $tags_result->fetch_assoc()): 
+                        $book_tags_result->data_seek(0);
+                        while ($tag = $book_tags_result->fetch_assoc()): 
                         ?>
-                            <option value="<?php echo $tag['id']; ?>" <?php echo in_array($tag['id'], $filter_tags) ? 'selected' : ''; ?>><?php echo htmlspecialchars($tag['name']); ?></option>
+                            <option value="<?php echo $tag['id']; ?>" <?php echo in_array($tag['id'], $filter_book_tags) ? 'selected' : ''; ?>><?php echo htmlspecialchars($tag['name']); ?></option>
                         <?php endwhile; ?>
                     </select>
                 </div>
@@ -244,9 +244,9 @@ $notes_result = $conn->query($notes_query);
                         <h3 class="font-semibold"><?php echo htmlspecialchars($note['book_title']); ?> by <?php echo htmlspecialchars($note['book_author']); ?></h3>
                         <p class="text-gray-600 text-sm"><?php echo date('F j, Y, g:i a', strtotime($note['created_at'])); ?></p>
                         <p class="mt-2"><?php echo nl2br(htmlspecialchars($note['content'])); ?></p>
-                        <?php if ($note['tags']): ?>
+                        <?php if ($note['book_tags']): ?>
                             <div class="mt-2">
-                                <?php foreach (explode(',', $note['tags']) as $tag): ?>
+                                <?php foreach (explode(',', $note['book_tags']) as $tag): ?>
                                     <span class="inline-block bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700 mr-2 mb-2"><?php echo htmlspecialchars($tag); ?></span>
                                 <?php endforeach; ?>
                             </div>
@@ -256,7 +256,6 @@ $notes_result = $conn->query($notes_query);
             </div>
         </div>
     </div>
-
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
