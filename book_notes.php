@@ -195,7 +195,7 @@ $notes_result = $conn->query($notes_query);
                     <textarea id="content" name="content" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" rows="4"></textarea>
                 </div>
                 <div>
-                    <label for="book_tags" class="block text-sm font-medium text-gray-700">Book Tags</label>
+                    <label for="book_tags" class="block text-sm font-medium text-gray-700">Note Tags</label>
                     <select id="book_tags" name="book_tags[]" multiple class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                         <?php 
                         $book_tags_result->data_seek(0);
