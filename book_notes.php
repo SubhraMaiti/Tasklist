@@ -109,6 +109,26 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     $stmt->close();
                 }
                 break;
+            case 'delete_note':
+                if (isset($_POST['note_id'])) {
+                    $note_id = $_POST['note_id'];
+                    $sql = "DELETE FROM notes WHERE id = ?";
+                    $stmt = $conn->prepare($sql);
+                    $stmt->bind_param("i", $note_id);
+                    $stmt->execute();
+                    $stmt->close();
+                }
+                break;
+            case 'delete_note':
+                if (isset($_POST['note_id'])) {
+                    $note_id = $_POST['note_id'];
+                    $sql = "DELETE FROM notes WHERE id = ?";
+                    $stmt = $conn->prepare($sql);
+                    $stmt->bind_param("i", $note_id);
+                    $stmt->execute();
+                    $stmt->close();
+                }
+                break;
         }
     }
 }
@@ -251,6 +271,9 @@ $notes_result = $conn->query($notes_query);
                                 <?php endforeach; ?>
                             </div>
                         <?php endif; ?>
+                        <button class="delete-note absolute top-2 right-2 text-red-500 hover:text-red-700" data-note-id="<?php echo $note['id']; ?>">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
                     </div>
                 <?php endwhile; ?>
             </div>
@@ -264,6 +287,31 @@ $notes_result = $conn->query($notes_query);
                 tags: true,
                 tokenSeparators: [',', ' '],
                 placeholder: "Select or add tags"
+            });
+
+            $('.delete-note').on('click', function() {
+                const noteId = $(this).data('note-id');
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "You won't be able to revert this!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, delete it!'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.post('', { action: 'delete_note', note_id: noteId }, function() {
+                            Swal.fire(
+                                'Deleted!',
+                                'Your note has been deleted.',
+                                'success'
+                            ).then(() => {
+                                location.reload();
+                            });
+                        });
+                    }
+                });
             });
         });
     </script>
