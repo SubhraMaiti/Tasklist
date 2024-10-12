@@ -157,7 +157,7 @@ $notes_result = $conn->query($notes_query);
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 </head>
 <body class="bg-gray-100">
-    <div class="container mx-auto px-4 py-8">
+    <div class="container mx-auto px-4 py-8 bg-gray-50">
         <h1 class="text-3xl font-bold mb-8">Book Notes Management</h1>
         
         <!-- Add New Book Form -->
