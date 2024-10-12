@@ -94,7 +94,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 // Process book tags
                 foreach ($book_tags as $tag) {
                     // Check if book tag exists, if not create it
-                    $sql = "INSERT IGNORE INTO book_tags (name) VALUES (?)";
+                    $sql = "INSERT INTO book_tags (name) VALUES (?) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)";
                     $stmt = $conn->prepare($sql);
                     $stmt->bind_param("s", $tag);
                     $stmt->execute();
@@ -260,7 +260,7 @@ $notes_result = $conn->query($notes_query);
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
         $(document).ready(function() {
-            $('#tags, #filter_tags').select2({
+            $('#book_tags, #filter_book_tags').select2({
                 tags: true,
                 tokenSeparators: [',', ' '],
                 placeholder: "Select or add tags"
