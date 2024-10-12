@@ -161,7 +161,7 @@ $notes_result = $conn->query($notes_query);
         <h1 class="text-3xl font-bold mb-8">Book Notes Management</h1>
         
         <!-- Add New Book Form -->
-        <div class="bg-grey-300 shadow-md rounded-lg p-6 mb-8">
+        <div class="bg-gray-300 shadow-md rounded-lg p-6 mb-8">
             <h2 class="text-xl font-semibold mb-4">Add New Book</h2>
             <form method="post" action="" class="space-y-4">
                 <input type="hidden" name="action" value="add_book">
@@ -178,7 +178,7 @@ $notes_result = $conn->query($notes_query);
         </div>
         
         <!-- Add New Note Form -->
-        <div class="bg-grey-300 shadow-md rounded-lg p-6 mb-8">
+        <div class="bg-gray-300 shadow-md rounded-lg p-6 mb-8">
             <h2 class="text-xl font-semibold mb-4">Add New Note</h2>
             <form method="post" action="" class="space-y-4">
                 <input type="hidden" name="action" value="add_note">
@@ -210,7 +210,7 @@ $notes_result = $conn->query($notes_query);
         </div>
         
         <!-- Notes List with Filtering -->
-        <div class="bg-grey-300 shadow-md rounded-lg p-6">
+        <div class="bg-gray-300 shadow-md rounded-lg p-6">
             <h2 class="text-xl font-semibold mb-4">Notes</h2>
             <form method="get" action="" class="mb-4 space-y-4">
                 <div>
