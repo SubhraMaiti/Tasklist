@@ -240,7 +240,7 @@ $notes_result = $conn->query($notes_query);
             </form>
             <div class="space-y-4">
                 <?php while ($note = $notes_result->fetch_assoc()): ?>
-                    <div class="border rounded-lg p-4">
+                    <div class="bg-gray-50 border rounded-lg p-4">
                         <h3 class="font-semibold"><?php echo htmlspecialchars($note['book_title']); ?> by <?php echo htmlspecialchars($note['book_author']); ?></h3>
                         <p class="text-gray-600 text-sm"><?php echo date('F j, Y, g:i a', strtotime($note['created_at'])); ?></p>
                         <p class="mt-2"><?php echo nl2br(htmlspecialchars($note['content'])); ?></p>
