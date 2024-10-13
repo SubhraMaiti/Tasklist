@@ -260,21 +260,23 @@ $notes_result = $conn->query($notes_query);
             </form>
             <div class="space-y-4">
                 <?php while ($note = $notes_result->fetch_assoc()): ?>
-                    <div class="bg-gray-50 border rounded-lg p-4 relative">
-                        <h3 class="font-semibold"><?php echo htmlspecialchars($note['book_title']); ?> by <?php echo htmlspecialchars($note['book_author']); ?></h3>
-                        <p class="text-gray-600 text-sm"><?php echo date('F j, Y, g:i a', strtotime($note['created_at'])); ?></p>
-                        <p class="mt-2"><?php echo nl2br(htmlspecialchars($note['content'])); ?></p>
-                        <?php if ($note['book_tags']): ?>
-                            <div class="mt-2">
-                                <?php foreach (explode(',', $note['book_tags']) as $tag): ?>
-                                    <span class="inline-block bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700 mr-2 mb-2"><?php echo htmlspecialchars($tag); ?></span>
-                                <?php endforeach; ?>
-                            </div>
-                        <?php endif; ?>
-                        <button class="delete-note absolute top-2 right-2 text-red-500 hover:text-red-700" data-note-id="<?php echo $note['id']; ?>">
-                            <i class="fas fa-trash-alt"></i>
-                        </button>
+                <div class="bg-gray-50 border rounded-lg p-4 relative">
+                    <p class="mt-2 mb-4"><?php echo nl2br(htmlspecialchars($note['content'])); ?></p>
+                    <div class="mt-2 text-sm">
+                        <span class="font-semibold text-gray-700"><?php echo htmlspecialchars($note['book_title']); ?></span> by <?php echo htmlspecialchars($note['book_author']); ?> • 
+                        <span class="text-gray-600"><?php echo date('F j, Y, g:i a', strtotime($note['created_at'])); ?></span>
                     </div>
+                    <?php if ($note['book_tags']): ?>
+                    <div class="mt-2">
+                        <?php foreach (explode(',', $note['book_tags']) as $tag): ?>
+                        <span class="inline-block bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700 mr-2 mb-2"><?php echo htmlspecialchars($tag); ?></span>
+                        <?php endforeach; ?>
+                    </div>
+                    <?php endif; ?>
+                    <button class="delete-note absolute top-2 right-2 text-red-500 hover:text-red-700" data-note-id="<?php echo $note['id']; ?>">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
                 <?php endwhile; ?>
             </div>
         </div>
